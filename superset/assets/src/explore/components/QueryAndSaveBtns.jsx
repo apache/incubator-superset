@@ -19,6 +19,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { ButtonGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { t } from '@superset-ui/translation';
 import classnames from 'classnames';
 
 import Button from '../../components/Button';
@@ -61,8 +62,11 @@ export default function QueryAndSaveBtns({
 
   const saveButtonDisabled = errorMessage ? true : loading;
   const qryOrStopButton = loading ? (
-    <Button onClick={onStop} bsStyle="warning">
-      <i className="fa fa-stop-circle-o" /> Stop
+    <Button
+      onClick={onStop}
+      bsStyle="warning"
+    >
+      <i className="fa fa-stop-circle-o" /> {' ' + t('Stop')}
     </Button>
   ) : (
     <Button
@@ -71,7 +75,7 @@ export default function QueryAndSaveBtns({
       bsStyle={qryButtonStyle}
       disabled={!!errorMessage}
     >
-      <i className="fa fa-bolt" /> Run Query
+      <i className="fa fa-bolt" /> {' ' + t('Run Query')}
     </Button>
   );
 
@@ -86,7 +90,7 @@ export default function QueryAndSaveBtns({
           disabled={saveButtonDisabled}
           onClick={onSave}
         >
-          <i className="fa fa-plus-circle" /> Save
+          <i className="fa fa-plus-circle" /> {' ' + t('Save')}
         </Button>
       </ButtonGroup>
       {errorMessage && (
