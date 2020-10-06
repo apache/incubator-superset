@@ -903,7 +903,17 @@ class ChartDataResponseSchema(Schema):
     )
 
 
+class ChartDataStopSchema(Schema):
+    dashboard_id = fields.Integer(
+        description="the dashboard for which to terminate pending chart data requests. "
+        "Requires defining a hook for handling query cancellation requests "
+        "by setting `STOP_DASHBOARD_PENDING_QUERIES_HOOK`.",
+        required=True,
+    )
+
+
 CHART_SCHEMAS = (
+    ChartDataStopSchema,
     ChartDataQueryContextSchema,
     ChartDataResponseSchema,
     # TODO: These should optimally be included in the QueryContext schema as an `anyOf`
