@@ -639,6 +639,9 @@ class BaseViz:
 
     def get_csv(self) -> Optional[str]:
         df = self.get_df()
+        columns = list(df.columns)
+        verbose_map = self.datasource.data.get("verbose_map", {})
+        df.columns = [verbose_map.get(column, column) for column in columns]
         include_index = not isinstance(df.index, pd.RangeIndex)
         return df.to_csv(index=include_index, **config["CSV_EXPORT"])
 
