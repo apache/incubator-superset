@@ -105,6 +105,12 @@ def version(verbose: bool) -> None:
 def load_examples_run(
     load_test_data: bool, only_metadata: bool = False, force: bool = False
 ) -> None:
+    """Loads examples - includes sample data and objects (dashboards/charts)
+
+    NOTE: found the hard way that ordering here matters to cypress tests
+    as of fall 2020, it be great to refactor Cypress to not refer to
+    datasets by hard-coded, non-deterministic autonumber ids.
+    """
     if only_metadata:
         print("Loading examples metadata")
     else:
@@ -124,10 +130,10 @@ def load_examples_run(
     print("Loading [Birth names]")
     examples.load_birth_names(only_metadata, force)
 
-    print("Loading [Unicode test data]")
-    examples.load_unicode_test_data(only_metadata, force)
+    if load_test_data:
+        print("Loading [Unicode test data]")
+        examples.load_unicode_test_data(only_metadata, force)
 
-    if not load_test_data:
         print("Loading [Random time series data]")
         examples.load_random_time_series_data(only_metadata, force)
 
@@ -140,29 +146,31 @@ def load_examples_run(
         print("Loading [Multiformat time series]")
         examples.load_multiformat_time_series(only_metadata, force)
 
-        print("Loading [Paris GeoJson]")
-        examples.load_paris_iris_geojson(only_metadata, force)
+    print("Loading [Paris GeoJson]")
+    examples.load_paris_iris_geojson(only_metadata, force)
 
-        print("Loading [San Francisco population polygons]")
-        examples.load_sf_population_polygons(only_metadata, force)
+    print("Loading [San Francisco population polygons]")
+    examples.load_sf_population_polygons(only_metadata, force)
 
-        print("Loading [Flights data]")
-        examples.load_flights(only_metadata, force)
+    print("Loading [Flights data]")
+    examples.load_flights(only_metadata, force)
 
-        print("Loading [BART lines]")
-        examples.load_bart_lines(only_metadata, force)
+    print("Loading [BART lines]")
+    examples.load_bart_lines(only_metadata, force)
 
-        print("Loading [Multi Line]")
-        examples.load_multi_line(only_metadata)
+    print("Loading [Multi Line]")
+    examples.load_multi_line(only_metadata)
 
+    if load_test_data:
         print("Loading [Misc Charts] dashboard")
         examples.load_misc_dashboard()
 
-        print("Loading DECK.gl demo")
-        examples.load_deck_dash()
+    print("Loading DECK.gl demo")
+    examples.load_deck_dash()
 
-    print("Loading [Tabbed dashboard]")
-    examples.load_tabbed_dashboard(only_metadata)
+    if load_test_data:
+        print("Loading [Tabbed dashboard]")
+        examples.load_tabbed_dashboard(only_metadata)
 
 
 @with_appcontext
