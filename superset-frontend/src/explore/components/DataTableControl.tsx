@@ -22,13 +22,14 @@ import { FormControl } from 'react-bootstrap';
 import { Column } from 'react-table';
 import debounce from 'lodash/debounce';
 
-import { BOOL_FALSE_DISPLAY, BOOL_TRUE_DISPLAY } from 'src/constants';
+import { BOOL_FALSE_DISPLAY, BOOL_TRUE_DISPLAY, $anyType } from 'src/constants';
 import Button from 'src/components/Button';
 import {
   applyFormattingToTabularData,
   prepareCopyToClipboardTabularData,
 } from 'src/utils/common';
 import CopyToClipboard from 'src/components/CopyToClipboard';
+
 import RowCountLabel from './RowCountLabel';
 
 export const CopyButton = styled(Button)`
@@ -47,7 +48,7 @@ export const CopyButton = styled(Button)`
 export const CopyToClipboardButton = ({
   data,
 }: {
-  data?: Record<string, any>;
+  data?: Record<string, $anyType>;
 }) => (
   <CopyToClipboard
     text={data ? prepareCopyToClipboardTabularData(data) : ''}
@@ -70,7 +71,7 @@ export const FilterInput = ({
     <FormControl
       placeholder={t('Search')}
       bsSize="sm"
-      onChange={(event: any) => {
+      onChange={(event: $anyType) => {
         const filterText = event.target.value;
         debouncedChangeHandler(filterText);
       }}
@@ -78,20 +79,20 @@ export const FilterInput = ({
   );
 };
 
-export const RowCount = ({ data }: { data?: Record<string, any>[] }) => (
+export const RowCount = ({ data }: { data?: Record<string, $anyType>[] }) => (
   <RowCountLabel rowcount={data?.length ?? 0} suffix={t('rows retrieved')} />
 );
 
 export const useFilteredTableData = (
   filterText: string,
-  data?: Record<string, any>[],
+  data?: Record<string, $anyType>[],
 ) =>
   useMemo(() => {
     if (!data?.length) {
       return [];
     }
     const formattedData = applyFormattingToTabularData(data);
-    return formattedData.filter((row: Record<string, any>) =>
+    return formattedData.filter((row: Record<string, $anyType>) =>
       Object.values(row).some(value =>
         value?.toString().toLowerCase().includes(filterText.toLowerCase()),
       ),
@@ -99,7 +100,7 @@ export const useFilteredTableData = (
   }, [data, filterText]);
 
 export const useTableColumns = (
-  data?: Record<string, any>[],
+  data?: Record<string, $anyType>[],
   moreConfigs?: { [key: string]: Partial<Column> },
 ) =>
   useMemo(

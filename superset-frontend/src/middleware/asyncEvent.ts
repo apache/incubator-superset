@@ -18,6 +18,7 @@
  */
 import { Dispatch, Middleware, MiddlewareAPI } from 'redux';
 import { makeApi, SupersetClient } from '@superset-ui/core';
+import { $anyType } from 'src/constants';
 import { SupersetError } from 'src/components/ErrorMessage/types';
 import { FeatureFlag, isFeatureEnabled } from '../featureFlags';
 import {
@@ -40,16 +41,19 @@ type AsyncEventOptions = {
     GLOBAL_ASYNC_QUERIES_TRANSPORT: string;
     GLOBAL_ASYNC_QUERIES_POLLING_DELAY: number;
   };
-  getPendingComponents: (state: any) => any[];
-  successAction: (componentId: number, componentData: any) => { type: string };
-  errorAction: (componentId: number, response: any) => { type: string };
+  getPendingComponents: (state: $anyType) => $anyType[];
+  successAction: (
+    componentId: number,
+    componentData: $anyType,
+  ) => { type: string };
+  errorAction: (componentId: number, response: $anyType) => { type: string };
   processEventsCallback?: (events: AsyncEvent[]) => void; // this is currently used only for tests
 };
 
 type CachedDataResponse = {
   componentId: number;
   status: string;
-  data: any;
+  data: $anyType;
 };
 
 const initAsyncEvents = (options: AsyncEventOptions) => {

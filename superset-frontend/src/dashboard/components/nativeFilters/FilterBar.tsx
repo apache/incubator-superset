@@ -31,6 +31,7 @@ import Button from 'src/components/Button';
 import Icon from 'src/components/Icon';
 import { getChartDataRequest } from 'src/chart/chartAction';
 import { areObjectsEqual } from 'src/reduxUtils';
+import { $anyType } from 'src/constants';
 import Loading from 'src/components/Loading';
 import FilterConfigurationLink from './FilterConfigurationLink';
 // import FilterScopeModal from 'src/dashboard/components/filterscope/FilterScopeModal';
@@ -197,7 +198,7 @@ interface FilterProps {
 
 interface FiltersBarProps {
   filtersOpen: boolean;
-  toggleFiltersBar: any;
+  toggleFiltersBar: $anyType;
 }
 
 const FilterValue: React.FC<FilterProps> = ({
@@ -347,7 +348,7 @@ const FilterBar: React.FC<FiltersBarProps> = ({
   );
   const setExtraFormData = useSetExtraFormData();
   const filterConfigs = useFilterConfiguration();
-  const canEdit = useSelector<any, boolean>(
+  const canEdit = useSelector<$anyType, boolean>(
     ({ dashboardInfo }) => dashboardInfo.dash_edit_perm,
   );
   const [visiblePopoverId, setVisiblePopoverId] = useState<string | null>(null);
