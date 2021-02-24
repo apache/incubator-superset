@@ -23,8 +23,6 @@ from typing import List, Optional
 from unittest.mock import patch
 from zipfile import is_zipfile, ZipFile
 
-from tests.insert_chart_mixin import InsertChartMixin
-
 import pytest
 import prison
 import yaml
@@ -41,6 +39,11 @@ from superset.views.base import generate_download_headers
 
 from tests.base_api_tests import ApiOwnersTestCaseMixin
 from tests.base_tests import SupersetTestCase
+from tests.fixtures.birth_names_dashboard import (
+    load_birth_names_dashboard_with_slices,
+    load_birth_names_datasource,
+)
+from tests.fixtures.get_dashboards import get_dashboards_ids
 from tests.fixtures.importexport import (
     chart_config,
     database_config,
@@ -49,9 +52,11 @@ from tests.fixtures.importexport import (
     dataset_config,
     dataset_metadata_config,
 )
-from tests.utils.get_dashboards import get_dashboards_ids
-from tests.fixtures.birth_names_dashboard import load_birth_names_dashboard_with_slices
-from tests.fixtures.world_bank_dashboard import load_world_bank_dashboard_with_slices
+from tests.fixtures.world_bank_dashboard import (
+    load_world_bank_dashboard_with_slices,
+    load_world_bank_datasource,
+)
+from tests.insert_chart_mixin import InsertChartMixin
 
 DASHBOARDS_FIXTURE_COUNT = 10
 

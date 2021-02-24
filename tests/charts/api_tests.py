@@ -23,8 +23,11 @@ from unittest import mock
 from zipfile import is_zipfile, ZipFile
 
 from superset.models.sql_lab import Query
+from tests.fixtures.birth_names_dashboard import (
+    load_birth_names_dashboard_with_slices,
+    load_birth_names_datasource,
+)
 from tests.insert_chart_mixin import InsertChartMixin
-from tests.fixtures.birth_names_dashboard import load_birth_names_dashboard_with_slices
 
 import humanize
 import prison
@@ -33,7 +36,10 @@ import yaml
 from sqlalchemy import and_, or_
 from sqlalchemy.sql import func
 
-from tests.fixtures.world_bank_dashboard import load_world_bank_dashboard_with_slices
+from tests.fixtures.world_bank_dashboard import (
+    load_world_bank_dashboard_with_slices,
+    load_world_bank_datasource,
+)
 from tests.test_app import app
 from superset.charts.commands.data import ChartDataCommand
 from superset.connectors.sqla.models import SqlaTable
@@ -60,7 +66,7 @@ from tests.fixtures.energy_dashboard import load_energy_table_with_slice
 from tests.fixtures.query_context import get_query_context, ANNOTATION_LAYERS
 from tests.fixtures.unicode_dashboard import load_unicode_dashboard_with_slice
 from tests.annotation_layers.fixtures import create_annotation_layers
-from tests.utils.get_dashboards import get_dashboards_ids
+from tests.fixtures.get_dashboards import get_dashboards_ids
 
 CHART_DATA_URI = "api/v1/chart/data"
 CHARTS_FIXTURE_COUNT = 10
@@ -80,8 +86,9 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         with self.create_app().app_context():
             charts = []
             admin = self.get_user("admin")
+            ds_id = self.get_ds_ids("birth_names")
             for cx in range(CHARTS_FIXTURE_COUNT - 1):
-                charts.append(self.insert_chart(f"name{cx}", [admin.id], 1))
+                charts.append(self.insert_chart(f"name{cx}", [admin.id], ds_id))
             fav_charts = []
             for cx in range(round(CHARTS_FIXTURE_COUNT / 2)):
                 fav_star = FavStar(
@@ -103,7 +110,8 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
     def create_chart_with_report(self):
         with self.create_app().app_context():
             admin = self.get_user("admin")
-            chart = self.insert_chart(f"chart_report", [admin.id], 1)
+            ds_id = self.get_ds_ids("birth_names")
+            chart = self.insert_chart(f"chart_report", [admin.id], ds_id)
             report_schedule = ReportSchedule(
                 type=ReportScheduleType.REPORT,
                 name="report_with_chart",
@@ -123,8 +131,8 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
     def add_dashboard_to_chart(self):
         with self.create_app().app_context():
             admin = self.get_user("admin")
-
-            self.chart = self.insert_chart("My chart", [admin.id], 1)
+            ds_id = self.get_ds_ids("birth_names")
+            self.chart = self.insert_chart("My chart", [admin.id], ds_id)
 
             self.original_dashboard = Dashboard()
             self.original_dashboard.dashboard_title = "Original Dashboard"
@@ -181,12 +189,14 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         buf.seek(0)
         return buf
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_delete_chart(self):
         """
         Chart API: Test delete
         """
+        ds_id = self.get_ds_ids("birth_names")
         admin_id = self.get_user("admin").id
-        chart_id = self.insert_chart("name", [admin_id], 1).id
+        chart_id = self.insert_chart("name", [admin_id], ds_id).id
         self.login(username="admin")
         uri = f"api/v1/chart/{chart_id}"
         rv = self.delete_assert_metric(uri, "delete")
@@ -194,6 +204,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         model = db.session.query(Slice).get(chart_id)
         self.assertEqual(model, None)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_delete_bulk_charts(self):
         """
         Chart API: Test delete bulk
@@ -201,9 +212,12 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         admin = self.get_user("admin")
         chart_count = 4
         chart_ids = list()
+        ds_id = self.get_ds_ids("birth_names")
         for chart_name_index in range(chart_count):
             chart_ids.append(
-                self.insert_chart(f"title{chart_name_index}", [admin.id], 1, admin).id
+                self.insert_chart(
+                    f"title{chart_name_index}", [admin.id], ds_id, admin
+                ).id
             )
         self.login(username="admin")
         argument = chart_ids
@@ -238,7 +252,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.delete_assert_metric(uri, "delete")
         self.assertEqual(rv.status_code, 404)
 
-    @pytest.mark.usefixtures("create_chart_with_report")
+    @pytest.mark.usefixtures("load_birth_names_datasource", "create_chart_with_report")
     def test_delete_chart_with_report(self):
         """
         Chart API: Test delete with associated report
@@ -269,7 +283,9 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.delete_assert_metric(uri, "bulk_delete")
         self.assertEqual(rv.status_code, 404)
 
-    @pytest.mark.usefixtures("create_chart_with_report", "create_charts")
+    @pytest.mark.usefixtures(
+        "load_birth_names_datasource", "create_chart_with_report", "create_charts"
+    )
     def test_bulk_delete_chart_with_report(self):
         """
         Chart API: Test bulk delete with associated report
@@ -294,12 +310,14 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         }
         self.assertEqual(response, expected_response)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_delete_chart_admin_not_owned(self):
         """
         Chart API: Test admin delete not owned
         """
+        ds_id = self.get_ds_ids("birth_names")
         gamma_id = self.get_user("gamma").id
-        chart_id = self.insert_chart("title", [gamma_id], 1).id
+        chart_id = self.insert_chart("title", [gamma_id], ds_id).id
 
         self.login(username="admin")
         uri = f"api/v1/chart/{chart_id}"
@@ -308,16 +326,18 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         model = db.session.query(Slice).get(chart_id)
         self.assertEqual(model, None)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_delete_bulk_chart_admin_not_owned(self):
         """
         Chart API: Test admin delete bulk not owned
         """
+        ds_id = self.get_ds_ids("birth_names")
         gamma_id = self.get_user("gamma").id
         chart_count = 4
         chart_ids = list()
         for chart_name_index in range(chart_count):
             chart_ids.append(
-                self.insert_chart(f"title{chart_name_index}", [gamma_id], 1).id
+                self.insert_chart(f"title{chart_name_index}", [gamma_id], ds_id).id
             )
 
         self.login(username="admin")
@@ -333,17 +353,19 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
             model = db.session.query(Slice).get(chart_id)
             self.assertEqual(model, None)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_delete_chart_not_owned(self):
         """
         Chart API: Test delete try not owned
         """
+        ds_id = self.get_ds_ids("birth_names")
         user_alpha1 = self.create_user(
             "alpha1", "password", "Alpha", email="alpha1@superset.org"
         )
         user_alpha2 = self.create_user(
             "alpha2", "password", "Alpha", email="alpha2@superset.org"
         )
-        chart = self.insert_chart("title", [user_alpha1.id], 1)
+        chart = self.insert_chart("title", [user_alpha1.id], ds_id)
         self.login(username="alpha2", password="password")
         uri = f"api/v1/chart/{chart.id}"
         rv = self.delete_assert_metric(uri, "delete")
@@ -353,10 +375,12 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         db.session.delete(user_alpha2)
         db.session.commit()
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_delete_bulk_chart_not_owned(self):
         """
         Chart API: Test delete bulk try not owned
         """
+        ds_id = self.get_ds_ids("birth_names")
         user_alpha1 = self.create_user(
             "alpha1", "password", "Alpha", email="alpha1@superset.org"
         )
@@ -368,10 +392,10 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         charts = list()
         for chart_name_index in range(chart_count):
             charts.append(
-                self.insert_chart(f"title{chart_name_index}", [user_alpha1.id], 1)
+                self.insert_chart(f"title{chart_name_index}", [user_alpha1.id], ds_id)
             )
 
-        owned_chart = self.insert_chart("title_owned", [user_alpha2.id], 1)
+        owned_chart = self.insert_chart("title_owned", [user_alpha2.id], ds_id)
 
         self.login(username="alpha2", password="password")
 
@@ -409,6 +433,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         Chart API: Test create chart
         """
         dashboards_ids = get_dashboards_ids(db, ["world_health", "births"])
+        ds_id = self.get_ds_ids("birth_names")
         admin_id = self.get_user("admin").id
         chart_data = {
             "slice_name": "name1",
@@ -417,7 +442,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
             "viz_type": "viz_type1",
             "params": "1234",
             "cache_timeout": 1000,
-            "datasource_id": 1,
+            "datasource_id": ds_id,
             "datasource_type": "table",
             "dashboards": dashboards_ids,
         }
@@ -430,13 +455,15 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         db.session.delete(model)
         db.session.commit()
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_create_simple_chart(self):
         """
         Chart API: Test create simple chart
         """
+        ds_id = self.get_ds_ids("birth_names")
         chart_data = {
             "slice_name": "title1",
-            "datasource_id": 1,
+            "datasource_id": ds_id,
             "datasource_type": "table",
         }
         self.login(username="admin")
@@ -448,13 +475,15 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         db.session.delete(model)
         db.session.commit()
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_create_chart_validate_owners(self):
         """
         Chart API: Test create validate owners
         """
+        ds_id = self.get_ds_ids("birth_names")
         chart_data = {
             "slice_name": "title1",
-            "datasource_id": 1,
+            "datasource_id": ds_id,
             "datasource_type": "table",
             "owners": [1000],
         }
@@ -466,13 +495,15 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         expected_response = {"message": {"owners": ["Owners are invalid"]}}
         self.assertEqual(response, expected_response)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_create_chart_validate_params(self):
         """
         Chart API: Test create validate params json
         """
+        ds_id = self.get_ds_ids("birth_names")
         chart_data = {
             "slice_name": "title1",
-            "datasource_id": 1,
+            "datasource_id": ds_id,
             "datasource_type": "table",
             "params": '{"A:"a"}',
         }
@@ -481,14 +512,16 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.post_assert_metric(uri, chart_data, "post")
         self.assertEqual(rv.status_code, 400)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_create_chart_validate_datasource(self):
         """
         Chart API: Test create validate datasource
         """
         self.login(username="admin")
+        ds_id = self.get_ds_ids("birth_names")
         chart_data = {
             "slice_name": "title1",
-            "datasource_id": 1,
+            "datasource_id": ds_id,
             "datasource_type": "unknown",
         }
         rv = self.post_assert_metric("/api/v1/chart/", chart_data, "post")
@@ -554,13 +587,15 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         db.session.delete(model)
         db.session.commit()
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_update_chart_new_owner(self):
         """
         Chart API: Test update set new owner to current user
         """
+        ds_id = self.get_ds_ids("birth_names")
         gamma = self.get_user("gamma")
         admin = self.get_user("admin")
-        chart_id = self.insert_chart("title", [gamma.id], 1).id
+        chart_id = self.insert_chart("title", [gamma.id], ds_id).id
         chart_data = {"slice_name": "title1_changed"}
         self.login(username="admin")
         uri = f"api/v1/chart/{chart_id}"
@@ -571,7 +606,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         db.session.delete(model)
         db.session.commit()
 
-    @pytest.mark.usefixtures("add_dashboard_to_chart")
+    @pytest.mark.usefixtures("load_birth_names_datasource", "add_dashboard_to_chart")
     def test_update_chart_new_dashboards(self):
         """
         Chart API: Test update set new owner to current user
@@ -587,7 +622,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         self.assertIn(self.new_dashboard, self.chart.dashboards)
         self.assertNotIn(self.original_dashboard, self.chart.dashboards)
 
-    @pytest.mark.usefixtures("add_dashboard_to_chart")
+    @pytest.mark.usefixtures("load_birth_names_datasource", "add_dashboard_to_chart")
     def test_not_update_chart_none_dashboards(self):
         """
         Chart API: Test update set new owner to current user
@@ -600,17 +635,19 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         self.assertIn(self.original_dashboard, self.chart.dashboards)
         self.assertEqual(len(self.chart.dashboards), 1)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_update_chart_not_owned(self):
         """
         Chart API: Test update not owned
         """
+        ds_id = self.get_ds_ids("birth_names")
         user_alpha1 = self.create_user(
             "alpha1", "password", "Alpha", email="alpha1@superset.org"
         )
         user_alpha2 = self.create_user(
             "alpha2", "password", "Alpha", email="alpha2@superset.org"
         )
-        chart = self.insert_chart("title", [user_alpha1.id], 1)
+        chart = self.insert_chart("title", [user_alpha1.id], ds_id)
 
         self.login(username="alpha2", password="password")
         chart_data = {"slice_name": "title1_changed"}
@@ -622,41 +659,50 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         db.session.delete(user_alpha2)
         db.session.commit()
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_update_chart_validate_datasource(self):
         """
         Chart API: Test update validate datasource
         """
+        ds_id = self.get_ds_ids("birth_names")
         admin = self.get_user("admin")
-        chart = self.insert_chart("title", owners=[admin.id], datasource_id=1)
-        self.login(username="admin")
+        chart = self.insert_chart("title", owners=[admin.id], datasource_id=ds_id)
+        try:
+            self.login(username="admin")
 
-        chart_data = {"datasource_id": 1, "datasource_type": "unknown"}
-        rv = self.put_assert_metric(f"/api/v1/chart/{chart.id}", chart_data, "put")
-        self.assertEqual(rv.status_code, 400)
-        response = json.loads(rv.data.decode("utf-8"))
-        self.assertEqual(
-            response,
-            {"message": {"datasource_type": ["Must be one of: druid, table, view."]}},
-        )
+            chart_data = {"datasource_id": 1, "datasource_type": "unknown"}
+            rv = self.put_assert_metric(f"/api/v1/chart/{chart.id}", chart_data, "put")
+            self.assertEqual(rv.status_code, 400)
+            response = json.loads(rv.data.decode("utf-8"))
+            self.assertEqual(
+                response,
+                {
+                    "message": {
+                        "datasource_type": ["Must be one of: druid, table, view."]
+                    }
+                },
+            )
 
-        chart_data = {"datasource_id": 0, "datasource_type": "table"}
-        rv = self.put_assert_metric(f"/api/v1/chart/{chart.id}", chart_data, "put")
-        self.assertEqual(rv.status_code, 422)
-        response = json.loads(rv.data.decode("utf-8"))
-        self.assertEqual(
-            response, {"message": {"datasource_id": ["Dataset does not exist"]}}
-        )
+            chart_data = {"datasource_id": 0, "datasource_type": "table"}
+            rv = self.put_assert_metric(f"/api/v1/chart/{chart.id}", chart_data, "put")
+            self.assertEqual(rv.status_code, 422)
+            response = json.loads(rv.data.decode("utf-8"))
+            self.assertEqual(
+                response, {"message": {"datasource_id": ["Dataset does not exist"]}}
+            )
+        finally:
+            db.session.delete(chart)
+            db.session.commit()
 
-        db.session.delete(chart)
-        db.session.commit()
-
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_update_chart_validate_owners(self):
         """
         Chart API: Test update validate owners
         """
+        ds_id = self.get_ds_ids("birth_names")
         chart_data = {
             "slice_name": "title1",
-            "datasource_id": 1,
+            "datasource_id": ds_id,
             "datasource_type": "table",
             "owners": [1000],
         }
@@ -668,13 +714,16 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         expected_response = {"message": {"owners": ["Owners are invalid"]}}
         self.assertEqual(response, expected_response)
 
-    @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
+    @pytest.mark.usefixtures(
+        "load_world_bank_datasource", "load_birth_names_dashboard_with_slices"
+    )
     def test_get_chart(self):
         """
         Chart API: Test get chart
         """
+        ds_id = self.get_ds_ids("birth_names")
         admin = self.get_user("admin")
-        chart = self.insert_chart("title", [admin.id], 1)
+        chart = self.insert_chart("title", [admin.id], ds_id)
         self.login(username="admin")
         uri = f"api/v1/chart/{chart.id}"
         rv = self.get_assert_metric(uri, "get")
@@ -742,13 +791,15 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         data = json.loads(rv.data.decode("utf-8"))
         self.assertEqual(data["count"], 33)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_get_charts_changed_on(self):
         """
         Dashboard API: Test get charts changed on
         """
+        ds_id = self.get_ds_ids("birth_names")
         admin = self.get_user("admin")
         start_changed_on = datetime.now()
-        chart = self.insert_chart("foo_a", [admin.id], 1, description="ZY_bar")
+        chart = self.insert_chart("foo_a", [admin.id], ds_id, description="ZY_bar")
 
         self.login(username="admin")
 
@@ -892,7 +943,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         data = json.loads(rv.data.decode("utf-8"))
         self.assertEqual(data["count"], 0)
 
-    @pytest.mark.usefixtures("create_charts")
+    @pytest.mark.usefixtures("load_birth_names_datasource", "create_charts")
     def test_get_charts_favorite_filter(self):
         """
         Chart API: Test get charts favorite filter
@@ -939,7 +990,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         assert rv.status_code == 200
         assert len(expected_models) == data["count"]
 
-    @pytest.mark.usefixtures("create_charts")
+    @pytest.mark.usefixtures("load_birth_names_datasource", "create_charts")
     def test_get_current_user_favorite_status(self):
         """
         Dataset API: Test get current user favorite stars
@@ -1117,6 +1168,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         result = response_payload["result"][0]
         self.assertEqual(result["rowcount"], 5)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_chart_data_incorrect_result_type(self):
         """
         Chart data API: Test chart data with unsupported result type
@@ -1256,6 +1308,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         self.assertEqual(result["rowcount"], 0)
         self.assertEqual(result["data"], [])
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_chart_data_incorrect_request(self):
         """
         Chart data API: Test chart data with invalid SQL
@@ -1268,6 +1321,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.post_assert_metric(CHART_DATA_URI, request_payload, "data")
         self.assertEqual(rv.status_code, 400)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_chart_data_with_invalid_datasource(self):
         """
         Chart data API: Test chart data query with invalid schema
@@ -1278,6 +1332,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.post_assert_metric(CHART_DATA_URI, payload, "data")
         self.assertEqual(rv.status_code, 400)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_chart_data_with_invalid_enum_value(self):
         """
         Chart data API: Test chart data query with invalid enum value
@@ -1291,6 +1346,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.client.post(CHART_DATA_URI, json=payload)
         self.assertEqual(rv.status_code, 400)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_query_exec_not_allowed(self):
         """
         Chart data API: Test chart data query not allowed
@@ -1320,6 +1376,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         if get_example_database().backend != "presto":
             assert "('boy' = 'boy')" in result
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     @mock.patch.dict(
         "superset.extensions.feature_flag_manager._feature_flags",
         GLOBAL_ASYNC_QUERIES=True,
@@ -1355,6 +1412,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         rv = self.post_assert_metric(CHART_DATA_URI, request_payload, "data")
         self.assertEqual(rv.status_code, 200)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     @mock.patch.dict(
         "superset.extensions.feature_flag_manager._feature_flags",
         GLOBAL_ASYNC_QUERIES=True,
@@ -1403,6 +1461,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(data["result"][0]["rowcount"], expected_row_count)
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     @mock.patch.dict(
         "superset.extensions.feature_flag_manager._feature_flags",
         GLOBAL_ASYNC_QUERIES=True,
@@ -1424,6 +1483,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
         self.assertEqual(rv.status_code, 422)
         self.assertEqual(data["message"], "Error loading data from cache")
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     @mock.patch.dict(
         "superset.extensions.feature_flag_manager._feature_flags",
         GLOBAL_ASYNC_QUERIES=True,
@@ -1628,9 +1688,7 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
             "message": {"metadata.yaml": {"type": ["Must be equal to Slice."]}}
         }
 
-    @pytest.mark.usefixtures(
-        "create_annotation_layers", "load_birth_names_dashboard_with_slices"
-    )
+    @pytest.mark.usefixtures("load_birth_names_datasource", "create_annotation_layers")
     def test_chart_data_annotations(self):
         """
         Chart data API: Test chart data query
@@ -1698,3 +1756,8 @@ class TestChartApi(SupersetTestCase, ApiOwnersTestCaseMixin, InsertChartMixin):
                 name
             )
         return name
+
+    def get_ds_ids(self, table_name):
+        return (
+            db.session.query(SqlaTable.id).filter_by(table_name=table_name).first()[0]
+        )

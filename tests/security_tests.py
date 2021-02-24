@@ -27,9 +27,8 @@ import pytest
 import random
 
 from flask import current_app, g
+from tests.test_app import app as testing_app
 from sqlalchemy import Float, Date, String
-
-from superset.models.dashboard import Dashboard
 
 from superset import app, appbuilder, db, security_manager, viz, ConnectorRegistry
 from superset.connectors.druid.models import DruidCluster, DruidDatasource
@@ -37,6 +36,7 @@ from superset.connectors.sqla.models import RowLevelSecurityFilter, SqlaTable
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import SupersetSecurityException
 from superset.models.core import Database
+from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
 from superset.sql_parse import Table
 from superset.utils.core import get_example_database
@@ -49,12 +49,16 @@ from .dashboard_utils import (
 )
 from tests.fixtures.birth_names_dashboard import load_birth_names_dashboard_with_slices
 from tests.fixtures.energy_dashboard import load_energy_table_with_slice
+from tests.fixtures.expose_db_in_sqllab import expose_in_sqllab
 from tests.fixtures.public_role import (
     public_role_like_gamma,
     public_role_like_test_role,
 )
 from tests.fixtures.unicode_dashboard import load_unicode_dashboard_with_slice
-from tests.fixtures.world_bank_dashboard import load_world_bank_dashboard_with_slices
+from tests.fixtures.world_bank_dashboard import (
+    load_world_bank_datasource,
+    load_world_bank_dashboard_with_slices,
+)
 
 NEW_SECURITY_CONVERGE_VIEWS = (
     "Annotation",
@@ -100,54 +104,57 @@ def delete_schema_perm(view_menu_name: str) -> None:
 class TestRolePermission(SupersetTestCase):
     """Testing export role permissions."""
 
-    def setUp(self):
+    @pytest.fixture()
+    def prepare_ds(self):
         session = db.session
-        security_manager.add_role(SCHEMA_ACCESS_ROLE)
-        session.commit()
+        with testing_app.app_context():
+            security_manager.add_role(SCHEMA_ACCESS_ROLE)
+            session.commit()
 
-        ds = (
-            db.session.query(SqlaTable)
-            .filter_by(table_name="wb_health_population")
-            .first()
-        )
-        ds.schema = "temp_schema"
-        ds.schema_perm = ds.get_schema_perm()
+            ds = (
+                db.session.query(SqlaTable)
+                .filter_by(table_name="wb_health_population")
+                .first()
+            )
+            ds.schema = "temp_schema"
+            ds.schema_perm = ds.get_schema_perm()
 
-        ds_slices = (
-            session.query(Slice)
-            .filter_by(datasource_type="table")
-            .filter_by(datasource_id=ds.id)
-            .all()
-        )
-        for s in ds_slices:
-            s.schema_perm = ds.schema_perm
-        create_schema_perm("[examples].[temp_schema]")
-        gamma_user = security_manager.find_user(username="gamma")
-        gamma_user.roles.append(security_manager.find_role(SCHEMA_ACCESS_ROLE))
-        session.commit()
+            ds_slices = (
+                session.query(Slice)
+                .filter_by(datasource_type="table")
+                .filter_by(datasource_id=ds.id)
+                .all()
+            )
+            for s in ds_slices:
+                s.schema_perm = ds.schema_perm
+            create_schema_perm("[examples].[temp_schema]")
+            gamma_user = security_manager.find_user(username="gamma")
+            gamma_user.roles.append(security_manager.find_role(SCHEMA_ACCESS_ROLE))
+            session.commit()
 
-    def tearDown(self):
-        session = db.session
-        ds = (
-            session.query(SqlaTable)
-            .filter_by(table_name="wb_health_population")
-            .first()
-        )
-        schema_perm = ds.schema_perm
-        ds.schema = None
-        ds.schema_perm = None
-        ds_slices = (
-            session.query(Slice)
-            .filter_by(datasource_type="table")
-            .filter_by(datasource_id=ds.id)
-            .all()
-        )
-        for s in ds_slices:
-            s.schema_perm = None
+            yield
 
-        delete_schema_perm(schema_perm)
-        session.delete(security_manager.find_role(SCHEMA_ACCESS_ROLE))
-        session.commit()
+            session = db.session
+            ds = (
+                session.query(SqlaTable)
+                .filter_by(table_name="wb_health_population")
+                .first()
+            )
+            schema_perm = ds.schema_perm
+            ds.schema = None
+            ds.schema_perm = None
+            ds_slices = (
+                session.query(Slice)
+                .filter_by(datasource_type="table")
+                .filter_by(datasource_id=ds.id)
+                .all()
+            )
+            for s in ds_slices:
+                s.schema_perm = None
+
+            delete_schema_perm(schema_perm)
+            session.delete(security_manager.find_role(SCHEMA_ACCESS_ROLE))
+            session.commit()
 
     def test_set_perm_sqla_table(self):
         session = db.session
@@ -267,7 +274,6 @@ class TestRolePermission(SupersetTestCase):
         session.delete(stored_table)
         session.commit()
 
-    @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
     def test_set_perm_druid_datasource(self):
         self.create_druid_test_objects()
         session = db.session
@@ -500,6 +506,7 @@ class TestRolePermission(SupersetTestCase):
             )
             self.assertEqual(schemas, ["1", "2", "3"])  # no changes
 
+    @pytest.mark.usefixtures("load_world_bank_datasource", "prepare_ds")
     @patch("superset.security.manager.g")
     def test_schemas_accessible_by_user_schema_access(self, mock_g):
         # User has schema access to the schema 1
@@ -514,6 +521,7 @@ class TestRolePermission(SupersetTestCase):
             self.assertEqual(schemas, ["1"])
         delete_schema_perm("[examples].[1]")
 
+    @pytest.mark.usefixtures("load_world_bank_datasource", "prepare_ds")
     @patch("superset.security.manager.g")
     def test_schemas_accessible_by_user_datasource_access(self, mock_g):
         # User has schema access to the datasource temp_schema.wb_health_population in examples DB.
@@ -525,6 +533,7 @@ class TestRolePermission(SupersetTestCase):
             )
             self.assertEqual(schemas, ["temp_schema"])
 
+    @pytest.mark.usefixtures("load_world_bank_datasource", "prepare_ds")
     @patch("superset.security.manager.g")
     def test_schemas_accessible_by_user_datasource_and_schema_access(self, mock_g):
         # User has schema access to the datasource temp_schema.wb_health_population in examples DB.
@@ -542,7 +551,7 @@ class TestRolePermission(SupersetTestCase):
         self.assertIsNotNone(vm)
         delete_schema_perm("[examples].[2]")
 
-    @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
+    @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices", "prepare_ds")
     def test_gamma_user_schema_access_to_dashboards(self):
         dash = db.session.query(Dashboard).filter_by(slug="world_health").first()
         dash.published = True
@@ -553,13 +562,14 @@ class TestRolePermission(SupersetTestCase):
         self.assertIn("/superset/dashboard/world_health/", data)
         self.assertNotIn("/superset/dashboard/births/", data)
 
+    @pytest.mark.usefixtures("load_world_bank_datasource", "prepare_ds")
     def test_gamma_user_schema_access_to_tables(self):
         self.login(username="gamma")
         data = str(self.client.get("tablemodelview/list/").data)
         self.assertIn("wb_health_population", data)
         self.assertNotIn("birth_names", data)
 
-    @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices")
+    @pytest.mark.usefixtures("load_world_bank_dashboard_with_slices", "prepare_ds")
     def test_gamma_user_schema_access_to_charts(self):
         self.login(username="gamma")
         data = str(self.client.get("api/v1/chart/").data)
@@ -571,6 +581,9 @@ class TestRolePermission(SupersetTestCase):
         )  # wb_health_population slice, has access
         self.assertNotIn("Girl Name Cloud", data)  # birth_names slice, no access
 
+    @pytest.mark.usefixtures(
+        "load_birth_names_dashboard_with_slices", "load_world_bank_datasource"
+    )
     @pytest.mark.usefixtures("public_role_like_gamma")
     def test_public_sync_role_data_perms(self):
         """
@@ -612,13 +625,11 @@ class TestRolePermission(SupersetTestCase):
         for pvm in current_app.config["FAB_ROLES"]["TestRole"]:
             assert pvm in public_role_resource_names
 
+    @pytest.mark.usefixtures(
+        "load_world_bank_dashboard_with_slices", "prepare_ds", "expose_in_sqllab"
+    )
     def test_sqllab_gamma_user_schema_access_to_sqllab(self):
         session = db.session
-
-        example_db = session.query(Database).filter_by(database_name="examples").one()
-        example_db.expose_in_sqllab = True
-        session.commit()
-
         arguments = {
             "keys": ["none"],
             "filters": [{"col": "expose_in_sqllab", "opr": "eq", "value": True}],
@@ -632,6 +643,7 @@ class TestRolePermission(SupersetTestCase):
         databases_json = self.client.get(NEW_FLASK_GET_SQL_DBS_REQUEST).json
         self.assertEqual(databases_json["count"], 1)
         self.logout()
+        session.commit()
 
     def assert_can_read(self, view_menu, permissions_set):
         if view_menu in NEW_SECURITY_CONVERGE_VIEWS:

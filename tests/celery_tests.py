@@ -425,6 +425,7 @@ def test_in_app_context():
 
 def delete_tmp_view_or_table(name: str, db_object_type: str):
     db.get_engine().execute(f"DROP {db_object_type} IF EXISTS {name}")
+    db.session.commit()
 
 
 def wait_for_success(result):

@@ -16,9 +16,11 @@
 # under the License.
 # isort:skip_file
 import textwrap
-import unittest
-from unittest import mock
-from tests.fixtures.birth_names_dashboard import load_birth_names_dashboard_with_slices
+from unittest import mock, skipUnless
+from tests.fixtures.birth_names_dashboard import (
+    load_birth_names_dashboard_with_slices,
+    load_birth_names_datasource,
+)
 
 import pandas
 import pytest
@@ -35,7 +37,7 @@ from .fixtures.energy_dashboard import load_energy_table_with_slice
 
 
 class TestDatabaseModel(SupersetTestCase):
-    @unittest.skipUnless(
+    @skipUnless(
         SupersetTestCase.is_module_installed("requests"), "requests not installed"
     )
     def test_database_schema_presto(self):
@@ -67,12 +69,8 @@ class TestDatabaseModel(SupersetTestCase):
         db = make_url(model.get_sqla_engine(schema="foo").url).database
         self.assertEqual("prod", db)
 
-    @unittest.skipUnless(
-        SupersetTestCase.is_module_installed("thrift"), "thrift not installed"
-    )
-    @unittest.skipUnless(
-        SupersetTestCase.is_module_installed("pyhive"), "pyhive not installed"
-    )
+    @skipUnless(SupersetTestCase.is_module_installed("thrift"), "thrift not installed")
+    @skipUnless(SupersetTestCase.is_module_installed("pyhive"), "pyhive not installed")
     def test_database_schema_hive(self):
         sqlalchemy_uri = "hive://hive@hive.airbnb.io:10000/default?auth=NOSASL"
         model = Database(database_name="test_database", sqlalchemy_uri=sqlalchemy_uri)
@@ -82,7 +80,7 @@ class TestDatabaseModel(SupersetTestCase):
         db = make_url(model.get_sqla_engine(schema="core_db").url).database
         self.assertEqual("core_db", db)
 
-    @unittest.skipUnless(
+    @skipUnless(
         SupersetTestCase.is_module_installed("MySQLdb"), "mysqlclient not installed"
     )
     def test_database_schema_mysql(self):
@@ -95,7 +93,7 @@ class TestDatabaseModel(SupersetTestCase):
         db = make_url(model.get_sqla_engine(schema="staging").url).database
         self.assertEqual("staging", db)
 
-    @unittest.skipUnless(
+    @skipUnless(
         SupersetTestCase.is_module_installed("MySQLdb"), "mysqlclient not installed"
     )
     def test_database_impersonate_user(self):
@@ -442,6 +440,7 @@ class TestSqlaTableModel(SupersetTestCase):
 
         app.config["SQL_QUERY_MUTATOR"] = None
 
+    @pytest.mark.usefixtures("load_birth_names_datasource")
     def test_query_with_non_existent_metrics(self):
         tbl = self.get_table_by_name("birth_names")
 
