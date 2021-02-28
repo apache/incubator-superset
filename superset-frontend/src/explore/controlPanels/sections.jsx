@@ -100,7 +100,6 @@ export const annotations = {
           default: [],
           description: 'Annotation layers',
           renderTrigger: true,
-          tabOverride: 'data',
         },
       },
     ],

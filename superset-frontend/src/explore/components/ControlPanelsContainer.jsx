@@ -250,23 +250,20 @@ class ControlPanelsContainer extends React.Component {
     const querySectionsToRender = [];
     const displaySectionsToRender = [];
     this.sectionsToRender().forEach(section => {
-      // if at least one control in the section is not `renderTrigger`
-      // or asks to be displayed at the Data tab
-      if (
-        section.tabOverride === 'data' ||
-        section.controlSetRows.some(rows =>
-          rows.some(
-            control =>
-              control &&
-              control.config &&
-              (!control.config.renderTrigger ||
-                control.config.tabOverride === 'data'),
-          ),
-        )
-      ) {
+      if (section.tabOverride === 'customize') {
+        displaySectionsToRender.push(section);
+      } else if (section.tabOverride === 'data') {
         querySectionsToRender.push(section);
       } else {
-        displaySectionsToRender.push(section);
+        const allRenderTriggers = section.controlSetRows.every(rows =>
+          rows.every(control => control?.config?.renderTrigger),
+        );
+        // if at least one control in the section is not `renderTrigger`, it goes to the query section
+        if (allRenderTriggers) {
+          displaySectionsToRender.push(section);
+        } else {
+          querySectionsToRender.push(section);
+        }
       }
     });
 
