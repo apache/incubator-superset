@@ -24,13 +24,18 @@ import moment from 'moment';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import Button from 'src/components/Button';
 import shortid from 'shortid';
-import rison from 'rison';
-import { styled, t, makeApi } from '@superset-ui/core';
-import { debounce } from 'lodash';
+import {
+  styled,
+  t,
+  makeApi,
+  SupersetClient,
+  JsonResponse,
+} from '@superset-ui/core';
 
 import ErrorMessageWithStackTrace from 'src/components/ErrorMessage/ErrorMessageWithStackTrace';
 import { SaveDatasetModal } from 'src/SqlLab/components/SaveDatasetModal';
-import { put as updateDatset } from 'src/api/dataset';
+import rison from 'rison';
+import { debounce } from 'lodash';
 import Loading from '../../components/Loading';
 import ExploreCtasResultsButton from './ExploreCtasResultsButton';
 import ExploreResultsButton from './ExploreResultsButton';
@@ -42,6 +47,29 @@ import { prepareCopyToClipboardTabularData } from '../../utils/common';
 import { exploreChart } from '../../explore/exploreUtils';
 import { CtasEnum } from '../actions/sqlLab';
 import { Query } from '../types';
+
+const updateDataset = async (
+  datasetId: number,
+  dbId: number,
+  sql: string,
+  columns: Array<Record<string, any>>,
+  overrideColumns: boolean,
+) => {
+  const endpoint = `api/v1/dataset/${datasetId}?override_columns=${overrideColumns}`;
+  const headers = { 'Content-Type': 'application/json' };
+  const body = JSON.stringify({
+    sql,
+    columns,
+    database_id: dbId,
+  });
+
+  const data: JsonResponse = await SupersetClient.put({
+    endpoint,
+    headers,
+    body,
+  });
+  return data.json.result;
+};
 
 const SEARCH_HEIGHT = 46;
 
@@ -215,7 +243,7 @@ export default class ResultSet extends React.PureComponent<
     const { sql, results, dbId } = this.props.query;
     const { datasetToOverwrite } = this.state;
 
-    await updateDatset(
+    await updateDataset(
       datasetToOverwrite.datasetId,
       dbId,
       sql,
