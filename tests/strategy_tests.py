@@ -27,7 +27,7 @@ import pytest
 import pandas as pd
 
 from superset.models.slice import Slice
-from superset.utils.core import get_example_database
+from tests.fixtures.utils import get_test_database
 
 from superset import db
 
@@ -39,9 +39,8 @@ from superset.tasks.cache import (
     TopNDashboardsStrategy,
 )
 
-from .base_tests import SupersetTestCase
-from .dashboard_utils import create_dashboard, create_slice, create_table_for_dashboard
-from .fixtures.unicode_dashboard import load_unicode_dashboard_with_slice
+from tests.base_tests import SupersetTestCase
+from tests.fixtures.unicode_dashboard import load_unicode_dashboard_with_slice
 
 URL_PREFIX = "http://0.0.0.0:8081"
 

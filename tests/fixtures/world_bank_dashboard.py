@@ -29,8 +29,8 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.models.core import Database
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
-from superset.utils.core import get_example_database
-from tests.dashboard_utils import create_dashboard, create_table_for_dashboard
+from tests.dashboard_utils import create_dashboard
+from tests.fixtures.utils import create_table_from_df, get_test_database
 from tests.test_app import app
 
 
@@ -54,7 +54,7 @@ def _load_data():
     table_name = "wb_health_population"
 
     with app.app_context():
-        database = get_example_database()
+        database = get_test_database()
         df = _get_dataframe(database)
         dtype = {
             "year": DateTime if database.backend != "presto" else String(255),
@@ -62,7 +62,7 @@ def _load_data():
             "country_name": String(255),
             "region": String(255),
         }
-        table = create_table_for_dashboard(df, table_name, database, dtype)
+        table = create_table_from_df(df, table_name, dtype=dtype, database=database)
         slices = _create_world_bank_slices(table)
         dash = _create_world_bank_dashboard(table, slices)
         slices_ids_to_delete = [slice.id for slice in slices]
@@ -106,7 +106,7 @@ def _create_world_bank_dashboard(table: SqlaTable, slices: List[Slice]) -> Dashb
 
 
 def _cleanup(dash_id: int, slices_ids: List[int]) -> None:
-    engine = get_example_database().get_sqla_engine()
+    engine = get_test_database().get_sqla_engine()
     engine.execute("DROP TABLE IF EXISTS wb_health_population")
     dash = db.session.query(Dashboard).filter_by(id=dash_id).first()
     db.session.delete(dash)

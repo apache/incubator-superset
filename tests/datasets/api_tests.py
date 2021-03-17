@@ -36,11 +36,14 @@ from superset.dao.exceptions import (
 )
 from superset.extensions import db, security_manager
 from superset.models.core import Database
-from superset.utils.core import backend, get_example_database, get_main_database
+from superset.utils.core import get_main_database
 from superset.utils.dict_import_export import export_to_dict
 from tests.base_tests import SupersetTestCase
 from tests.conftest import CTAS_SCHEMA_NAME
-from tests.fixtures.birth_names_dashboard import load_birth_names_dashboard_with_slices
+from tests.fixtures.birth_names_dashboard import (
+    get_birth_names_dataset,
+    load_birth_names_dashboard_with_slices,
+)
 from tests.fixtures.energy_dashboard import load_energy_table_with_slice
 from tests.fixtures.importexport import (
     database_config,
@@ -49,6 +52,7 @@ from tests.fixtures.importexport import (
     dataset_metadata_config,
     dataset_ui_export,
 )
+from tests.fixtures.utils import get_test_database
 
 
 class TestDatasetApi(SupersetTestCase):
@@ -134,7 +138,7 @@ class TestDatasetApi(SupersetTestCase):
 
     @staticmethod
     def get_energy_usage_dataset():
-        example_db = get_example_database()
+        example_db = get_test_database()
         return (
             db.session.query(SqlaTable)
             .filter_by(database=example_db, table_name="energy_usage")
@@ -161,7 +165,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         Dataset API: Test get dataset list
         """
-        example_db = get_example_database()
+        example_db = get_test_database()
         self.login(username="admin")
         arguments = {
             "filters": [
@@ -262,7 +266,7 @@ class TestDatasetApi(SupersetTestCase):
             assert rv.status_code == 200
             assert response == expected_response
 
-        example_db = get_example_database()
+        example_db = get_test_database()
         datasets = []
         if example_db.backend == "postgresql":
             datasets.append(
@@ -484,11 +488,11 @@ class TestDatasetApi(SupersetTestCase):
         }
 
     def test_create_dataset_same_name_different_schema(self):
-        if backend() == "sqlite":
+        if superset_db_backend() == "sqlite":
             # sqlite doesn't support schemas
             return
 
-        example_db = get_example_database()
+        example_db = get_test_database()
         example_db.get_sqla_engine().execute(
             f"CREATE TABLE {CTAS_SCHEMA_NAME}.birth_names AS SELECT 2 as two"
         )
@@ -529,7 +533,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         Dataset API: Test create dataset validate table exists
         """
-        example_db = get_example_database()
+        example_db = get_test_database()
         self.login(username="admin")
         table_data = {
             "database": example_db.id,
@@ -734,7 +738,7 @@ class TestDatasetApi(SupersetTestCase):
         assert columns[0].column_name == "id"
         assert columns[1].column_name, "name"
         # TODO(bkyryliuk): find the reason why update is failing for the presto database
-        if get_example_database().backend != "presto":
+        if get_test_database().backend != "presto":
             assert columns[0].groupby is False
             assert columns[0].filterable is False
 
@@ -1283,7 +1287,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         Dataset API: Test export dataset
         """
-        birth_names_dataset = self.get_birth_names_dataset()
+        birth_names_dataset = get_birth_names_dataset()
         # TODO: fix test for presto
         # debug with dump: https://github.com/apache/superset/runs/1092546855
         if birth_names_dataset.database.backend in {"presto", "hive"}:
@@ -1327,7 +1331,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         Dataset API: Test export dataset has gamma
         """
-        birth_names_dataset = self.get_birth_names_dataset()
+        birth_names_dataset = get_birth_names_dataset()
 
         argument = [birth_names_dataset.id]
         uri = f"api/v1/dataset/export/?q={prison.dumps(argument)}"
@@ -1346,7 +1350,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         Dataset API: Test export dataset
         """
-        birth_names_dataset = self.get_birth_names_dataset()
+        birth_names_dataset = get_birth_names_dataset()
         # TODO: fix test for presto
         # debug with dump: https://github.com/apache/superset/runs/1092546855
         if birth_names_dataset.database.backend in {"presto", "hive"}:
@@ -1389,7 +1393,7 @@ class TestDatasetApi(SupersetTestCase):
         """
         Dataset API: Test export dataset has gamma
         """
-        birth_names_dataset = self.get_birth_names_dataset()
+        birth_names_dataset = get_birth_names_dataset()
 
         argument = [birth_names_dataset.id]
         uri = f"api/v1/dataset/export/?q={prison.dumps(argument)}"
@@ -1406,7 +1410,7 @@ class TestDatasetApi(SupersetTestCase):
         :return:
         """
         self.login(username="admin")
-        table = self.get_birth_names_dataset()
+        table = get_birth_names_dataset()
         uri = f"api/v1/dataset/{table.id}/related_objects"
         rv = self.get_assert_metric(uri, "related_objects")
         response = json.loads(rv.data.decode("utf-8"))
@@ -1427,7 +1431,7 @@ class TestDatasetApi(SupersetTestCase):
         assert rv.status_code == 404
         self.logout()
         self.login(username="gamma")
-        table = self.get_birth_names_dataset()
+        table = get_birth_names_dataset()
         uri = f"api/v1/dataset/{table.id}/related_objects"
         rv = self.client.get(uri)
         assert rv.status_code == 404

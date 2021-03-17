@@ -18,7 +18,6 @@
 """Unit tests for Superset"""
 import imp
 import json
-from contextlib import contextmanager
 from typing import Any, Dict, Union, List, Optional
 from unittest.mock import Mock, patch
 
@@ -27,11 +26,9 @@ import pytest
 from flask import Response
 from flask_appbuilder.security.sqla import models as ab_models
 from flask_testing import TestCase
-from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
-from tests.test_app import app
 from superset.sql_parse import CtasMethod
 from superset import db, security_manager
 from superset.connectors.base.models import BaseDatasource
@@ -42,8 +39,10 @@ from superset.models.slice import Slice
 from superset.models.core import Database
 from superset.models.dashboard import Dashboard
 from superset.models.datasource_access_request import DatasourceAccessRequest
-from superset.utils.core import get_example_database
 from superset.views.base_api import BaseSupersetModelRestApi
+
+from tests.test_app import app
+from tests.fixtures.utils import get_test_database
 
 FAKE_DB_NAME = "fake_db_100"
 test_client = app.test_client()
@@ -128,15 +127,6 @@ class SupersetTestCase(TestCase):
     @staticmethod
     def get_nonexistent_numeric_id(model):
         return (db.session.query(func.max(model.id)).scalar() or 0) + 1
-
-    @staticmethod
-    def get_birth_names_dataset():
-        example_db = get_example_database()
-        return (
-            db.session.query(SqlaTable)
-            .filter_by(database=example_db, table_name="birth_names")
-            .one()
-        )
 
     @staticmethod
     def create_user_with_roles(
@@ -339,12 +329,6 @@ class SupersetTestCase(TestCase):
             ):
                 security_manager.del_permission_role(public_role, perm)
 
-    def _get_database_by_name(self, database_name="main"):
-        if database_name == "examples":
-            return get_example_database()
-        else:
-            raise ValueError("Database doesn't exist")
-
     def run_sql(
         self,
         sql,
@@ -352,7 +336,6 @@ class SupersetTestCase(TestCase):
         user_name=None,
         raise_on_error=False,
         query_limit=None,
-        database_name="examples",
         sql_editor_id=None,
         select_as_cta=False,
         tmp_table_name=None,
@@ -363,7 +346,7 @@ class SupersetTestCase(TestCase):
         if user_name:
             self.logout()
             self.login(username=(user_name or "admin"))
-        dbid = self._get_database_by_name(database_name).id
+        dbid = get_test_database().id
         json_payload = {
             "database_id": dbid,
             "sql": sql,
@@ -437,17 +420,12 @@ class SupersetTestCase(TestCase):
             db.session.commit()
 
     def validate_sql(
-        self,
-        sql,
-        client_id=None,
-        user_name=None,
-        raise_on_error=False,
-        database_name="examples",
+        self, sql, client_id=None, user_name=None, raise_on_error=False,
     ):
         if user_name:
             self.logout()
             self.login(username=(user_name if user_name else "admin"))
-        dbid = self._get_database_by_name(database_name).id
+        dbid = get_test_database().id
         resp = self.get_json_resp(
             "/superset/validate_sql_json/",
             raise_on_error=False,
@@ -525,16 +503,3 @@ class SupersetTestCase(TestCase):
         else:
             mock_method.assert_called_once_with("error", func_name)
         return rv
-
-
-@contextmanager
-def db_insert_temp_object(obj: DeclarativeMeta):
-    """Insert a temporary object in database; delete when done."""
-    session = db.session
-    try:
-        session.add(obj)
-        session.commit()
-        yield obj
-    finally:
-        session.delete(obj)
-        session.commit()

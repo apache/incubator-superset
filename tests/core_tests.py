@@ -38,7 +38,7 @@ import pandas as pd
 import sqlalchemy as sqla
 from sqlalchemy.exc import SQLAlchemyError
 from superset.models.cache import CacheKey
-from superset.utils.core import get_example_database
+from tests.fixtures.utils import get_test_database
 from tests.fixtures.energy_dashboard import load_energy_table_with_slice
 from tests.test_app import app
 import superset.views.utils
@@ -145,7 +145,7 @@ class TestCore(SupersetTestCase):
         self.assertEqual(cache_key_with_groupby, viz.cache_key(qobj))
 
     def test_get_superset_tables_not_allowed(self):
-        example_db = utils.get_example_database()
+        example_db = get_test_database()
         schema_name = self.default_schema_backend_map[example_db.backend]
         self.login(username="gamma")
         uri = f"superset/tables/{example_db.id}/{schema_name}/undefined/"
@@ -153,7 +153,7 @@ class TestCore(SupersetTestCase):
         self.assertEqual(rv.status_code, 404)
 
     def test_get_superset_tables_substr(self):
-        example_db = utils.get_example_database()
+        example_db = get_test_database()
         if example_db.backend in {"presto", "hive"}:
             # TODO: change table to the real table that is in examples.
             return
@@ -462,7 +462,7 @@ class TestCore(SupersetTestCase):
         # need to temporarily allow sqlite dbs, teardown will undo this
         app.config["PREVENT_UNSAFE_DB_CONNECTIONS"] = False
         self.login(username=username)
-        database = utils.get_example_database()
+        database = get_test_database()
         # validate that the endpoint works with the password-masked sqlalchemy uri
         data = json.dumps(
             {
@@ -551,7 +551,7 @@ class TestCore(SupersetTestCase):
         self.assertEqual(expected_body, response_body)
 
     def test_custom_password_store(self):
-        database = utils.get_example_database()
+        database = get_test_database()
         conn_pre = sqla.engine.url.make_url(database.sqlalchemy_uri_decrypted)
 
         def custom_password_store(uri):
@@ -569,13 +569,13 @@ class TestCore(SupersetTestCase):
         # validate that sending a password-masked uri does not over-write the decrypted
         # uri
         self.login(username=username)
-        database = utils.get_example_database()
+        database = get_test_database()
         sqlalchemy_uri_decrypted = database.sqlalchemy_uri_decrypted
         url = "databaseview/edit/{}".format(database.id)
         data = {k: database.__getattribute__(k) for k in DatabaseView.add_columns}
         data["sqlalchemy_uri"] = database.safe_sqlalchemy_uri()
         self.client.post(url, data=data)
-        database = utils.get_example_database()
+        database = get_test_database()
         self.assertEqual(sqlalchemy_uri_decrypted, database.sqlalchemy_uri_decrypted)
 
         # Need to clean up after ourselves
@@ -719,14 +719,14 @@ class TestCore(SupersetTestCase):
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     def test_extra_table_metadata(self):
         self.login()
-        example_db = utils.get_example_database()
+        example_db = get_test_database()
         schema = "default" if example_db.backend in {"presto", "hive"} else "superset"
         self.get_json_resp(
             f"/superset/extra_table_metadata/{example_db.id}/birth_names/{schema}/"
         )
 
     def test_templated_sql_json(self):
-        if utils.get_example_database().backend == "presto":
+        if get_test_database().backend == "presto":
             # TODO: make it work for presto
             return
         self.login()
@@ -877,7 +877,7 @@ class TestCore(SupersetTestCase):
         table = SqlaTable(
             table_name="test_comments_in_sqlatable_query_table",
             sql=commented_query,
-            database=get_example_database(),
+            database=get_test_database(),
         )
         rendered_query = str(table.get_from_clause())
         self.assertEqual(clean_query, rendered_query)
@@ -1176,7 +1176,7 @@ class TestCore(SupersetTestCase):
     @pytest.mark.usefixtures("load_birth_names_dashboard_with_slices")
     def test_select_star(self):
         self.login(username="admin")
-        examples_db = utils.get_example_database()
+        examples_db = get_test_database()
         resp = self.get_resp(f"/superset/select_star/{examples_db.id}/birth_names")
         self.assertIn("gender", resp)
 
@@ -1185,7 +1185,7 @@ class TestCore(SupersetTestCase):
         Database API: Test get select star not allowed
         """
         self.login(username="gamma")
-        example_db = utils.get_example_database()
+        example_db = get_test_database()
         resp = self.client.get(f"/superset/select_star/{example_db.id}/birth_names")
         self.assertEqual(resp.status_code, 404)
 
@@ -1421,7 +1421,7 @@ class TestCore(SupersetTestCase):
 
     def test_virtual_table_explore_visibility(self):
         # test that default visibility it set to True
-        database = utils.get_example_database()
+        database = get_test_database()
         self.assertEqual(database.allows_virtual_table_explore, True)
 
         # test that visibility is disabled when extra is set to False
@@ -1443,8 +1443,8 @@ class TestCore(SupersetTestCase):
         self.assertEqual(database.allows_virtual_table_explore, True)
 
     def test_explore_database_id(self):
-        database = utils.get_example_database()
-        explore_database = utils.get_example_database()
+        database = get_test_database()
+        explore_database = get_test_database()
 
         # test that explore_database_id is the regular database
         # id if none is set in the extra
