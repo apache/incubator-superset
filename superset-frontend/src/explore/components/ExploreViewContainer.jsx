@@ -591,7 +591,7 @@ function mapStateToProps(state) {
     timeout: explore.common.conf.SUPERSET_WEBSERVER_TIMEOUT,
     ownCurrentState: dataMask?.ownFilters?.[form_data.slice_id]?.currentState,
     impressionId,
-    userId: explore.user_id
+    userId: explore.user_id,
   };
 }
 

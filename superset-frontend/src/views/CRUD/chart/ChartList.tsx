@@ -42,6 +42,7 @@ import SubMenu, { SubMenuProps } from 'src/components/Menu/SubMenu';
 import FaveStar from 'src/components/FaveStar';
 import ListView, {
   ListViewProps,
+  Filter,
   Filters,
   SelectOption,
   FilterOperators,
@@ -194,7 +195,7 @@ function ChartList(props: ChartListProps) {
 
   const columns = useMemo(
     () => [
-      (props.user.userId ? {
+      props.user.userId && {
         Cell: ({
           row: {
             original: { id },
@@ -210,7 +211,7 @@ function ChartList(props: ChartListProps) {
         id: 'id',
         disableSortBy: true,
         size: 'xs',
-      } : undefined),
+      },
       {
         Cell: ({
           row: {
@@ -375,13 +376,8 @@ function ChartList(props: ChartListProps) {
         disableSortBy: true,
         hidden: !canEdit && !canDelete,
       },
-    ].filter(e => e !== undefined),
-    [
-      canEdit,
-      canDelete,
-      canExport,
-      (props.user.userId ? favoriteStatus : undefined)
-    ].filter(e => e !== undefined),
+    ],
+    [canEdit, canDelete, canExport, props.user.userId && favoriteStatus],
   );
 
   const filters: Filters = [
@@ -469,25 +465,29 @@ function ChartList(props: ChartListProps) {
       ),
       paginate: false,
     },
-    (props.user.userId ? {
-      Header: t('Favorite'),
-      id: 'id',
-      urlDisplay: 'favorite',
-      input: 'select',
-      operator: FilterOperators.chartIsFav,
-      unfilteredLabel: t('Any'),
-      selects: [
-        { label: t('Yes'), value: true },
-        { label: t('No'), value: false },
-      ],
-    } : undefined),
+    ...(props.user.userId
+      ? [
+          {
+            Header: t('Favorite'),
+            id: 'id',
+            urlDisplay: 'favorite',
+            input: 'select',
+            operator: FilterOperators.chartIsFav,
+            unfilteredLabel: t('Any'),
+            selects: [
+              { label: t('Yes'), value: true },
+              { label: t('No'), value: false },
+            ],
+          } as Filter,
+        ]
+      : []),
     {
       Header: t('Search'),
       id: 'slice_name',
       input: 'search',
       operator: FilterOperators.chartAllText,
     },
-  ].filter(e => e !== undefined) as Filters;
+  ];
 
   const sortTypes = [
     {
