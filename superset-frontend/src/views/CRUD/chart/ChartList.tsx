@@ -194,7 +194,7 @@ function ChartList(props: ChartListProps) {
 
   const columns = useMemo(
     () => [
-      {
+      (props.user.userId ? {
         Cell: ({
           row: {
             original: { id },
@@ -210,7 +210,7 @@ function ChartList(props: ChartListProps) {
         id: 'id',
         disableSortBy: true,
         size: 'xs',
-      },
+      } : undefined),
       {
         Cell: ({
           row: {
@@ -375,8 +375,13 @@ function ChartList(props: ChartListProps) {
         disableSortBy: true,
         hidden: !canEdit && !canDelete,
       },
-    ],
-    [canEdit, canDelete, canExport, favoriteStatus],
+    ].filter(e => e !== undefined),
+    [
+      canEdit,
+      canDelete,
+      canExport,
+      (props.user.userId ? favoriteStatus : undefined)
+    ].filter(e => e !== undefined),
   );
 
   const filters: Filters = [
@@ -464,7 +469,7 @@ function ChartList(props: ChartListProps) {
       ),
       paginate: false,
     },
-    {
+    (props.user.userId ? {
       Header: t('Favorite'),
       id: 'id',
       urlDisplay: 'favorite',
@@ -475,14 +480,14 @@ function ChartList(props: ChartListProps) {
         { label: t('Yes'), value: true },
         { label: t('No'), value: false },
       ],
-    },
+    } : undefined),
     {
       Header: t('Search'),
       id: 'slice_name',
       input: 'search',
       operator: FilterOperators.chartAllText,
     },
-  ];
+  ].filter(e => e !== undefined) as Filters;
 
   const sortTypes = [
     {

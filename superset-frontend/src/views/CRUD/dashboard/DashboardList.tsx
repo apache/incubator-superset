@@ -186,7 +186,7 @@ function DashboardList(props: DashboardListProps) {
 
   const columns = useMemo(
     () => [
-      {
+      (props.user.userId ? {
         Cell: ({
           row: {
             original: { id },
@@ -202,7 +202,7 @@ function DashboardList(props: DashboardListProps) {
         id: 'id',
         disableSortBy: true,
         size: 'xs',
-      },
+      } : undefined),
       {
         Cell: ({
           row: {
@@ -352,8 +352,13 @@ function DashboardList(props: DashboardListProps) {
         hidden: !canEdit && !canDelete && !canExport,
         disableSortBy: true,
       },
-    ],
-    [canEdit, canDelete, canExport, favoriteStatus],
+    ].filter(e => e !== undefined),
+    [
+      canEdit,
+      canDelete,
+      canExport,
+      (props.user.userId ? favoriteStatus : undefined)
+    ].filter(e => e !== undefined),
   );
 
   const filters: Filters = [
@@ -410,7 +415,7 @@ function DashboardList(props: DashboardListProps) {
         { label: t('Unpublished'), value: false },
       ],
     },
-    {
+    (props.user.userId ? {
       Header: t('Favorite'),
       id: 'id',
       urlDisplay: 'favorite',
@@ -421,14 +426,14 @@ function DashboardList(props: DashboardListProps) {
         { label: t('Yes'), value: true },
         { label: t('No'), value: false },
       ],
-    },
+    } : undefined),
     {
       Header: t('Search'),
       id: 'dashboard_title',
       input: 'search',
       operator: FilterOperators.titleOrSlug,
     },
-  ];
+  ].filter(e => e !== undefined) as Filters;
 
   const sortTypes = [
     {
