@@ -25,6 +25,7 @@ import { JsonObject, styled } from '@superset-ui/core';
 import ErrorBoundary from 'src/components/ErrorBoundary';
 import BuilderComponentPane from 'src/dashboard/components/BuilderComponentPane';
 import DashboardHeader from 'src/dashboard/containers/DashboardHeader';
+import Icons from 'src/components/Icons';
 import IconButton from 'src/dashboard/components/IconButton';
 import DragDroppable from 'src/dashboard/components/dnd/DragDroppable';
 import DashboardComponent from 'src/dashboard/containers/DashboardComponent';
@@ -59,12 +60,19 @@ const HEADER_HEIGHT = 67;
 
 type DashboardBuilderProps = {};
 
-const StyledDashboardContent = styled.div<{ dashboardFiltersOpen: boolean }>`
+const StyledDashboardContent = styled.div<{
+  dashboardFiltersOpen: boolean;
+  editMode: boolean;
+}>`
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   height: auto;
   flex-grow: 1;
+  padding-left: ${({ theme, editMode }) => {
+    const paddingLeft = editMode ? theme.gridUnit * 8 : 0;
+    return paddingLeft;
+  }}px;
 
   .grid-container .dashboard-component-tabs {
     box-shadow: none;
@@ -199,7 +207,7 @@ const DashboardBuilder: FC<DashboardBuilderProps> = () => {
                     shouldFocus={shouldFocusTabs}
                     menuItems={[
                       <IconButton
-                        className="fa fa-level-down"
+                        icon={<Icons.FallOutlined iconSize="xl" />}
                         label="Collapse tab content"
                         onClick={handleDeleteTopLevelTabs}
                       />,
@@ -227,6 +235,7 @@ const DashboardBuilder: FC<DashboardBuilderProps> = () => {
       <StyledDashboardContent
         className="dashboard-content"
         dashboardFiltersOpen={dashboardFiltersOpen}
+        editMode={editMode}
       >
         {nativeFiltersEnabled && !editMode && (
           <StickyVerticalBar
