@@ -19,6 +19,7 @@
 import React from 'react';
 import { action } from '@storybook/addon-actions';
 import { withKnobs, boolean, select, text } from '@storybook/addon-knobs';
+import { t } from '@superset-ui/core';
 import DashboardImg from 'images/dashboard-card-fallback.svg';
 import ChartImg from 'images/chart-card-fallback.svg';
 import { Dropdown, Menu } from 'src/common/components';
@@ -68,10 +69,10 @@ export const SupersetListViewCard = () => (
           overlay={
             <Menu>
               <Menu.Item role="button" tabIndex={0} onClick={action('Delete')}>
-                <Icons.Trash /> Delete
+                <Icons.Trash /> {t('Delete')}
               </Menu.Item>
               <Menu.Item role="button" tabIndex={0} onClick={action('Edit')}>
-                <Icons.EditAlt /> Edit
+                <Icons.EditAlt /> {t('Edit')}
               </Menu.Item>
             </Menu>
           }
