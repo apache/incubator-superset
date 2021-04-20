@@ -252,7 +252,7 @@ class SupersetShillelaghAdapter(Adapter):
                     op = operator.ge if filter_.include_start else operator.gt
                     query = query.where(op(column, filter_.start))
                 if filter_.end is not None:
-                    op = operator.le if filter_.include_end else operator.ge
+                    op = operator.le if filter_.include_end else operator.lt
                     query = query.where(op(column, filter_.end))
             else:
                 raise ProgrammingError(f"Invalid filter: {filter_}")

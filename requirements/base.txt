@@ -15,6 +15,8 @@ amqp==2.6.1
 # via kombu
 apispec[yaml]==3.3.2
 # via flask-appbuilder
+apsw==3.9.2.post1
+# via shillelagh
 async-timeout==3.0.1
 # via aiohttp
 attrs==20.2.0
@@ -212,6 +214,7 @@ python-dateutil==2.8.1
 #   flask-appbuilder
 #   holidays
 #   pandas
+#   shillelagh
 python-dotenv==0.15.0
 # via apache-superset
 python-editor==1.0.4
@@ -236,6 +239,8 @@ redis==3.5.3
 retry==0.9.2
 # via apache-superset
 selenium==3.141.0
+# via apache-superset
+shillelagh==0.4.3
 # via apache-superset
 simplejson==3.17.2
 # via apache-superset
@@ -276,6 +281,7 @@ typing-extensions==3.7.4.3
 # via
 #   aiohttp
 #   apache-superset
+#   shillelagh
 urllib3==1.25.11
 # via selenium
 vine==1.3.0

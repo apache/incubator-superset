@@ -12,6 +12,7 @@
 # via flask-migrate
 # via kombu
 # via flask-appbuilder
+# via shillelagh
 # via aiohttp
 # via
 #   aiohttp
@@ -72,6 +73,7 @@
 # via apache-superset
 gevent==20.9.0
 # via -r requirements/docker.in
+# via apache-superset
 greenlet==0.4.17
 # via gevent
 # via apache-superset
@@ -141,6 +143,7 @@ psycopg2-binary==2.8.6
 #   flask-appbuilder
 #   holidays
 #   pandas
+#   shillelagh
 # via apache-superset
 # via alembic
 # via apache-superset
@@ -154,6 +157,7 @@ psycopg2-binary==2.8.6
 # via
 #   apache-superset
 #   apispec
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via apache-superset
@@ -189,6 +193,7 @@ psycopg2-binary==2.8.6
 # via
 #   aiohttp
 #   apache-superset
+#   shillelagh
 # via selenium
 # via
 #   amqp

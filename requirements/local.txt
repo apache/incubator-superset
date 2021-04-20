@@ -12,6 +12,7 @@
 # via flask-migrate
 # via kombu
 # via flask-appbuilder
+# via shillelagh
 # via aiohttp
 # via
 #   aiohttp
@@ -85,6 +86,7 @@
 #   flask-wtf
 # via pyhive
 # via geopy
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via apache-superset
@@ -173,6 +175,7 @@
 #   holidays
 #   pandas
 #   pyhive
+#   shillelagh
 #   tableschema
 # via apache-superset
 # via alembic
@@ -199,6 +202,7 @@
 # via
 #   pyhive
 #   thrift-sasl
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via
@@ -248,6 +252,7 @@
 # via
 #   aiohttp
 #   apache-superset
+#   shillelagh
 # via
 #   tableschema
 #   tabulator
