@@ -825,7 +825,11 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         dashboards = DashboardDAO.find_by_ids(requested_ids)
         if not dashboards:
             return self.response_404()
-        favorited_dashboard_ids = DashboardDAO.favorited_ids(dashboards, g.user.id)
+        favorited_dashboard_ids = (
+            DashboardDAO.favorited_ids(dashboards, g.user.id)
+            if hasattr(g.user, "id")
+            else []
+        )
         res = [
             {"id": request_id, "value": request_id in favorited_dashboard_ids}
             for request_id in requested_ids
