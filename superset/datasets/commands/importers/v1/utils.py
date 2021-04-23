@@ -29,6 +29,7 @@ from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, String, Text
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.visitors import VisitableType
 
+from superset import is_feature_enabled
 from superset.connectors.sqla.models import SqlaTable
 from superset.models.core import Database
 from superset.utils.core import get_example_database
@@ -115,10 +116,11 @@ def import_dataset(
     if dataset.id is None:
         session.flush()
 
-    example_database = get_example_database()
-    table_exists = example_database.has_table_by_name(dataset.table_name)
-    if data_uri and (not table_exists or force_data):
-        load_data(data_uri, dataset, example_database, session)
+    if is_feature_enabled("CREATE_EXAMPLES_DATABASE"):
+        example_database = get_example_database()
+        table_exists = example_database.has_table_by_name(dataset.table_name)
+        if data_uri and (not table_exists or force_data):
+            load_data(data_uri, dataset, example_database, session)
 
     return dataset
 

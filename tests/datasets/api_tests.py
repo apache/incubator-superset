@@ -26,6 +26,7 @@ from zipfile import is_zipfile, ZipFile
 import prison
 import pytest
 import yaml
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 
 from superset.connectors.sqla.models import SqlaTable, SqlMetric, TableColumn
@@ -1487,6 +1488,49 @@ class TestDatasetApi(SupersetTestCase):
         assert dataset.table_name == "imported_dataset"
         assert str(dataset.uuid) == dataset_config["uuid"]
 
+        db.session.delete(dataset)
+        db.session.delete(database)
+        db.session.commit()
+
+    @patch.dict(
+        "superset.extensions.feature_flag_manager._feature_flags",
+        {"CREATE_EXAMPLES_DATABASE": False},
+        clear=True,
+    )
+    def test_import_dataset_without_creation_of_examples_database(self):
+        self.login(username="admin")
+        uri = "api/v1/dataset/import/"
+
+        examples_database = get_example_database()
+        db.session.delete(examples_database)
+        db.session.commit()
+
+        buf = self.create_dataset_import()
+        form_data = {
+            "formData": (buf, "dataset_export.zip"),
+        }
+        rv = self.client.post(uri, data=form_data, content_type="multipart/form-data")
+        response = json.loads(rv.data.decode("utf-8"))
+
+        assert rv.status_code == 200
+        assert response == {"message": "OK"}
+
+        with pytest.raises(NoResultFound):
+            db.session.query(Database).filter_by(
+                database_name=examples_database.database_name
+            ).one()
+
+        database = (
+            db.session.query(Database).filter_by(uuid=database_config["uuid"]).one()
+        )
+        assert database.database_name == "imported_database"
+
+        assert len(database.tables) == 1
+        dataset = database.tables[0]
+        assert dataset.table_name == "imported_dataset"
+        assert str(dataset.uuid) == dataset_config["uuid"]
+
+        get_example_database()
         db.session.delete(dataset)
         db.session.delete(database)
         db.session.commit()

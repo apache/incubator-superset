@@ -60,7 +60,7 @@ from superset.models.annotations import Annotation, AnnotationLayer
 from superset.models.dashboard import Dashboard
 from superset.models.datasource_access_request import DatasourceAccessRequest
 from superset.models.slice import Slice
-from superset.models.sql_lab import Query
+from superset.models.sql_lab import Query, TabState
 from superset.result_set import SupersetResultSet
 from superset.utils import core as utils
 from superset.views import core as views
@@ -1418,6 +1418,9 @@ class TestCore(SupersetTestCase):
         # associated with any tabs
         payload = views.Superset._get_sqllab_tabs(user_id=user_id)
         self.assertEqual(len(payload["queries"]), 1)
+        tab_state = db.session.query(TabState).filter_by(id=tab_state_id).one()
+        db.session.delete(tab_state)
+        db.session.commit()
 
     def test_virtual_table_explore_visibility(self):
         # test that default visibility it set to True
