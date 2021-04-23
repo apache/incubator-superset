@@ -72,6 +72,7 @@ class SupersetEngineSpec(SqliteEngineSpec):
     engine_name = "Superset"
 
 
+# pylint: disable=abstract-method
 class SupersetAPSWDialect(APSWDialect):
 
     """
@@ -95,6 +96,7 @@ class SupersetAPSWDialect(APSWDialect):
 
     name = "superset"
 
+    # pylint: disable=unused-argument
     def create_connect_args(self, url: URL) -> Tuple[Tuple[()], Dict[str, Any]]:
         return (
             (),
@@ -107,12 +109,14 @@ class SupersetAPSWDialect(APSWDialect):
             },
         )
 
+    # pylint: disable=unused-argument, no-self-use
     def get_schema_names(
         self, connection: _ConnectionFairy, **kwargs: Any
     ) -> List[str]:
         return []
 
 
+# pylint: disable=invalid-name
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -140,6 +144,7 @@ def has_rowid(method: F) -> F:
     return cast(F, wrapper)
 
 
+# pylint: disable=too-many-instance-attributes
 class SupersetShillelaghAdapter(Adapter):
 
     """
@@ -285,7 +290,7 @@ class SupersetShillelaghAdapter(Adapter):
                 raise ProgrammingError(f"Invalid rowid specified: {row_id}")
             row[self._rowid] = row_id
 
-        # insert row
+        # pylint: disable=no-value-for-parameter
         query = self._table.insert().values(**row)
         connection = self.engine.connect()
         result = connection.execute(query)
@@ -294,12 +299,14 @@ class SupersetShillelaghAdapter(Adapter):
         if self._rowid:
             return result.inserted_primary_key[0]
 
+        # pylint: disable=no-value-for-parameter
         query = self._table.count()
         return connection.execute(query).scalar()
 
     @check_dml
     @has_rowid
     def delete_row(self, row_id: int) -> None:
+        # pylint: disable=no-value-for-parameter
         query = self._table.delete().where(self._table.c[self._rowid] == row_id)
         connection = self.engine.connect()
         connection.execute(query)
@@ -313,6 +320,7 @@ class SupersetShillelaghAdapter(Adapter):
                 raise ProgrammingError(f"Invalid rowid specified: {new_row_id}")
             row[self._rowid] = new_row_id
 
+        # pylint: disable=no-value-for-parameter
         query = (
             self._table.update()
             .where(self._table.c[self._rowid] == row_id)
