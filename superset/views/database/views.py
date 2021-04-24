@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import logging
 import os
 import tempfile
 from typing import TYPE_CHECKING
@@ -44,8 +45,9 @@ from .validators import schema_allows_csv_upload, sqlalchemy_uri_validator
 if TYPE_CHECKING:
     from werkzeug.datastructures import FileStorage  # pylint: disable=unused-import
 
-config = app.config
-stats_logger = config["STATS_LOGGER"]
+stats_logger = app.config["STATS_LOGGER"]
+
+logger = logging.getLogger(__name__)
 
 
 def sqlalchemy_uri_form_validator(_: _, field: StringField) -> None:
@@ -156,12 +158,13 @@ class CsvToDatabaseView(SimpleFormView):
         ).name
 
         try:
-            utils.ensure_path_exists(config["UPLOAD_FOLDER"])
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.csv_file.data, uploaded_tmp_file_path)
 
-            con = form.data.get("con")
             database = (
-                db.session.query(models.Database).filter_by(id=con.data.get("id")).one()
+                db.session.query(models.Database)
+                .filter_by(id=form.data.get("con").data.get("id"))
+                .one()
             )
 
             # More can be found here:
@@ -204,11 +207,10 @@ class CsvToDatabaseView(SimpleFormView):
             # E.g. if hive was used to upload a csv, presto will be a better option
             # to explore the table.
             expore_database = database
-            explore_database_id = database.explore_database_id
-            if explore_database_id:
+            if database.explore_database_id:
                 expore_database = (
                     db.session.query(models.Database)
-                    .filter_by(id=explore_database_id)
+                    .filter_by(id=database.explore_database_id)
                     .one_or_none()
                     or database
                 )
@@ -225,7 +227,7 @@ class CsvToDatabaseView(SimpleFormView):
 
             if sqla_table:
                 sqla_table.fetch_metadata()
-            if not sqla_table:
+            else:
                 sqla_table = SqlaTable(table_name=csv_table.table)
                 sqla_table.database = expore_database
                 sqla_table.database_id = database.id
@@ -235,11 +237,9 @@ class CsvToDatabaseView(SimpleFormView):
                 db.session.add(sqla_table)
             db.session.commit()
         except Exception as ex:  # pylint: disable=broad-except
+            logger.exception(ex)
             db.session.rollback()
-            try:
-                os.remove(uploaded_tmp_file_path)
-            except OSError:
-                pass
+
             message = _(
                 'Unable to upload CSV file "%(filename)s" to table '
                 '"%(table_name)s" in database "%(db_name)s". '
@@ -253,8 +253,11 @@ class CsvToDatabaseView(SimpleFormView):
             flash(message, "danger")
             stats_logger.incr("failed_csv_upload")
             return redirect("/csvtodatabaseview/form")
-
-        os.remove(uploaded_tmp_file_path)
+        finally:
+            try:
+                os.remove(uploaded_tmp_file_path)
+            except OSError as ex:
+                logger.exception(ex)
         # Go back to welcome page / splash screen
         message = _(
             'CSV file "%(csv_filename)s" uploaded to table "%(table_name)s" in '
@@ -313,12 +316,13 @@ class ExcelToDatabaseView(SimpleFormView):
         ).name
 
         try:
-            utils.ensure_path_exists(config["UPLOAD_FOLDER"])
+            utils.ensure_path_exists(app.config["UPLOAD_FOLDER"])
             upload_stream_write(form.excel_file.data, uploaded_tmp_file_path)
 
-            con = form.data.get("con")
             database = (
-                db.session.query(models.Database).filter_by(id=con.data.get("id")).one()
+                db.session.query(models.Database)
+                .filter_by(id=form.data.get("con").data.get("id"))
+                .one()
             )
 
             # some params are not supported by pandas.read_excel (e.g. chunksize).
