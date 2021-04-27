@@ -41,6 +41,7 @@ interface PluginFilterSelectCustomizeProps {
   defaultToFirstItem: boolean;
   inputRef?: RefObject<HTMLInputElement>;
   sortAscending: boolean;
+  applyFetchValuesPredicate: boolean;
 }
 
 export type PluginFilterSelectQueryFormData = QueryFormData &
@@ -68,4 +69,5 @@ export const DEFAULT_FORM_DATA: PluginFilterSelectCustomizeProps = {
   defaultToFirstItem: false,
   multiSelect: true,
   sortAscending: true,
+  applyFetchValuesPredicate: true,
 };
