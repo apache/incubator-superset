@@ -56,6 +56,17 @@ from sqlalchemy.types import String, TypeEngine, UnicodeText
 from typing_extensions import TypedDict
 
 from superset import app, security_manager, sql_parse
+from superset.db_engine_specs.exceptions import (
+    SupersetDBAPIDatabaseError,
+    SupersetDBAPIDataError,
+    SupersetDBAPIError,
+    SupersetDBAPIIntegrityError,
+    SupersetDBAPIInterfaceError,
+    SupersetDBAPIInternalError,
+    SupersetDBAPINotSupportedError,
+    SupersetDBAPIOperationalError,
+    SupersetDBAPIProgrammingError,
+)
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.models.sql_lab import Query
 from superset.models.sql_types.base import literal_dttm_type_factory
@@ -70,6 +81,19 @@ if TYPE_CHECKING:
     from superset.models.core import Database
 
 logger = logging.getLogger()
+
+
+standard_dbapi_exception_names = {
+    "Error": SupersetDBAPIError,
+    "InterfaceError": SupersetDBAPIInterfaceError,
+    "DatabaseError": SupersetDBAPIDatabaseError,
+    "DataError": SupersetDBAPIDataError,
+    "OperationalError": SupersetDBAPIOperationalError,
+    "IntegrityError": SupersetDBAPIIntegrityError,
+    "InternalError": SupersetDBAPIInternalError,
+    "ProgrammingError": SupersetDBAPIProgrammingError,
+    "NotSupportedError": SupersetDBAPINotSupportedError,
+}
 
 
 class TimeGrain(NamedTuple):  # pylint: disable=too-few-public-methods
@@ -296,8 +320,12 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         :param exception: The driver specific exception
         :return: Superset custom DBAPI exception
         """
-        new_exception = cls.get_dbapi_exception_mapping().get(type(exception))
-        if not new_exception:
+        dbapi_exception_maping = cls.get_dbapi_exception_mapping()
+        if type(exception) in dbapi_exception_maping:
+            new_exception = dbapi_exception_maping[type(exception)]
+        elif exception.__class__.__name__ in standard_dbapi_exception_names:
+            new_exception = standard_dbapi_exception_names[exception.__class__.__name__]
+        else:
             return exception
         return new_exception(str(exception))
 
