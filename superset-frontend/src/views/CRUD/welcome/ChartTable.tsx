@@ -23,7 +23,7 @@ import {
   useChartEditModal,
   useFavoriteStatus,
 } from 'src/views/CRUD/hooks';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 import { useHistory } from 'react-router-dom';
 import PropertiesModal from 'src/explore/components/PropertiesModal';
 import { User } from 'src/types/bootstrapTypes';

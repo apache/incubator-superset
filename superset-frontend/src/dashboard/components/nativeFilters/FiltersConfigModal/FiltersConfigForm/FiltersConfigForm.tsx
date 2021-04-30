@@ -41,7 +41,7 @@ import SupersetResourceSelect, {
 } from 'src/components/SupersetResourceSelect';
 import AdhocFilterControl from 'src/explore/components/controls/FilterControl/AdhocFilterControl';
 import DateFilterControl from 'src/explore/components/controls/DateFilterControl';
-import { addDangerToast } from 'src/messageToasts/actions';
+import { addDangerToast } from 'src/components/MessageToasts/actions';
 import { ClientErrorObject } from 'src/utils/getClientErrorObject';
 import SelectControl from 'src/explore/components/controls/SelectControl';
 import Button from 'src/components/Button';

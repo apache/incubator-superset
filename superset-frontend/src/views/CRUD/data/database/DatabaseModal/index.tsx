@@ -25,7 +25,7 @@ import React, {
   Reducer,
 } from 'react';
 import Tabs from 'src/components/Tabs';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 import {
   testDatabaseConnection,
   useSingleViewResource,

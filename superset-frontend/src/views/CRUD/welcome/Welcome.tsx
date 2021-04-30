@@ -25,7 +25,7 @@ import {
   getFromLocalStorage,
   setInLocalStorage,
 } from 'src/utils/localStorageHelpers';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 import Loading from 'src/components/Loading';
 import {
   createErrorHandler,

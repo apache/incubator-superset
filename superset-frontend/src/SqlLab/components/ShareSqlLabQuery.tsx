@@ -20,7 +20,7 @@ import React from 'react';
 import { t, useTheme } from '@superset-ui/core';
 
 import Button from 'src/components/Button';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 import Icon from 'src/components/Icon';
 import CopyToClipboard from 'src/components/CopyToClipboard';
 import { storeQuery } from 'src/utils/common';

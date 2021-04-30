@@ -22,7 +22,7 @@ import { useSingleViewResource } from 'src/views/CRUD/hooks';
 
 import Icon from 'src/components/Icon';
 import Modal from 'src/components/Modal';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 
 import { AnnotationLayerObject } from './types';
 
