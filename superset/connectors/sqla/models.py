@@ -481,6 +481,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
     is_sqllab_view = Column(Boolean, default=False)
     template_params = Column(Text)
     extra = Column(Text)
+    dataset_name = Column(String(250))
 
     baselink = "tablemodelview"
 
@@ -499,6 +500,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         "filter_select_enabled",
         "fetch_values_predicate",
         "extra",
+        "dataset_name",
     ]
     update_from_object_fields = [f for f in export_fields if f != "database_id"]
     export_parent = "database"
@@ -538,7 +540,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
 
     @property
     def datasource_name(self) -> str:
-        return self.table_name
+        return self.dataset_name
 
     @property
     def datasource_type(self) -> str:
@@ -586,8 +588,8 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
     @property
     def name(self) -> str:
         if not self.schema:
-            return self.table_name
-        return "{}.{}".format(self.schema, self.table_name)
+            return self.dataset_name
+        return "{}.{}".format(self.schema, self.dataset_name)
 
     @property
     def full_name(self) -> str:
