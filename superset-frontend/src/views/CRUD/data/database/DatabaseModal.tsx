@@ -37,6 +37,7 @@ import {
   StyledJsonEditor,
   StyledExpandableForm,
   StyledRequiredTab,
+  no_margin_bottom,
 } from './styles';
 
 interface DatabaseModalProps {
@@ -62,12 +63,16 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
   const [db, setDB] = useState<DatabaseObject | null>(null);
   const [isHidden, setIsHidden] = useState<boolean>(true);
   const [tabKey, setTabKey] = useState<string>(DEFAULT_TAB_KEY);
+  const [schemasAllowed, setSchemasAllowed] = useState<string>('');
+  const [metaDataCacheTimeout, setMetaDataCacheTimeout] = useState<string>(
+    '{}',
+  );
+  const [constQueryEnabled, setConstQueryEnabled] = useState<boolean>(false);
+  const [versionNumber, setVersionNumber] = useState<string>('');
   const conf = useCommonConf();
 
   const isEditMode = database !== null;
-  const defaultExtra =
-    '{\n  "metadata_params": {},\n  "engine_params": {},' +
-    '\n  "metadata_cache_timeout": {},\n  "schemas_allowed_for_csv_upload": [] \n}';
+  const defaultExtra = '{\n  "metadata_params": {},\n  "engine_params": {} \n}';
 
   // Database fetch logic
   const {
@@ -115,6 +120,16 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
         ...db,
       };
 
+      // Parse 'extra' field
+      const extraParsed = JSON.parse(db?.extra || defaultExtra);
+      // Add values back to extra field
+      extraParsed.metadata_cache_timeout = metaDataCacheTimeout;
+      extraParsed.schemas_allowed_for_csv_upload = schemasAllowed;
+      extraParsed.cost_query_enabled = constQueryEnabled;
+      extraParsed.version = versionNumber;
+      // Re-stringify
+      update.extra = JSON.stringify(extraParsed);
+
       // Need to clean update object
       if (update.id) {
         delete update.id;
@@ -157,6 +172,22 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
       data[name] = checked;
     } else {
       data[name] = value;
+    }
+
+    if (name === 'metadata_cache_timeout') {
+      setMetaDataCacheTimeout(value);
+    }
+
+    if (name === 'schemas_allowed_for_csv_upload') {
+      setSchemasAllowed(value);
+    }
+
+    if (name === 'cost_query_enabled') {
+      setConstQueryEnabled(checked);
+    }
+
+    if (name === 'version') {
+      setVersionNumber(value);
     }
 
     setDB(data);
@@ -205,6 +236,18 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
 
       fetchResource(id)
         .then(() => {
+          // Altering 'extra' JSON before returning it to 'extra' text field
+          if (dbFetched?.extra) {
+            // Parse 'extra' field
+            const extraParsed = JSON.parse(dbFetched.extra || defaultExtra);
+            // Remove values from extra
+            delete extraParsed.metadata_cache_timeout;
+            delete extraParsed.schemas_allowed_for_csv_upload;
+            delete extraParsed.cost_query_enabled;
+            delete extraParsed.version;
+            // Re-stringify and add back to dbFetched object
+            dbFetched.extra = JSON.stringify(extraParsed, null, '  ');
+          }
           setDB(dbFetched);
         })
         .catch(e =>
@@ -272,6 +315,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                 value={db?.database_name || ''}
                 placeholder={t('Name your dataset')}
                 onChange={onInputChange}
+                data-test="database-name-test"
               />
             </div>
             <div className="helper">
@@ -293,6 +337,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   'dialect+driver://username:password@host:port/database',
                 )}
                 onChange={onInputChange}
+                data-test="sqlalchemy-uri-test"
               />
             </div>
             <div className="helper">
@@ -332,7 +377,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
               }
               key="1"
             >
-              <StyledInputContainer className="mb-0">
+              <StyledInputContainer css={{ ...no_margin_bottom }}>
                 <div className="input-container">
                   <IndeterminateCheckbox
                     id="expose_in_sqllab"
@@ -351,7 +396,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                     'ctas-open': createAsOpen,
                   })}
                 >
-                  <StyledInputContainer className="mb-0">
+                  <StyledInputContainer css={{ ...no_margin_bottom }}>
                     <div className="input-container">
                       <IndeterminateCheckbox
                         id="allow_ctas"
@@ -367,7 +412,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                       />
                     </div>
                   </StyledInputContainer>
-                  <StyledInputContainer className="mb-0">
+                  <StyledInputContainer css={{ ...no_margin_bottom }}>
                     <div className="input-container">
                       <IndeterminateCheckbox
                         id="allow_cvas"
@@ -405,7 +450,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                       </div>
                     </StyledInputContainer>
                   </StyledInputContainer>
-                  <StyledInputContainer className="mb-0">
+                  <StyledInputContainer css={{ ...no_margin_bottom }}>
                     <div className="input-container">
                       <IndeterminateCheckbox
                         id="allow_dml"
@@ -421,7 +466,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                       />
                     </div>
                   </StyledInputContainer>
-                  <StyledInputContainer>
+                  <StyledInputContainer css={{ ...no_margin_bottom }}>
                     <div className="input-container">
                       <IndeterminateCheckbox
                         id="allow_multi_schema_metadata_fetch"
@@ -435,6 +480,38 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                           'Allow SQL Lab to fetch a list of all tables and all views across all database ' +
                             'schemas. For large data warehouse with thousands of tables, this can be ' +
                             'expensive and put strain on the system.',
+                        )}
+                      />
+                    </div>
+                  </StyledInputContainer>
+                  <StyledInputContainer css={{ ...no_margin_bottom }}>
+                    <div className="input-container">
+                      <IndeterminateCheckbox
+                        id="cost_query_enabled"
+                        indeterminate={false}
+                        checked={constQueryEnabled}
+                        onChange={onInputChange}
+                        labelText={t('Enable query cost estimation')}
+                      />
+                      <InfoTooltip
+                        tooltip={t(
+                          'For Presto and Postgres, shows a button to compute cost before running a query.',
+                        )}
+                      />
+                    </div>
+                  </StyledInputContainer>
+                  <StyledInputContainer>
+                    <div className="input-container">
+                      <IndeterminateCheckbox
+                        id="allows_virtual_table_explore"
+                        indeterminate={false}
+                        checked={!!db?.allows_virtual_table_explore}
+                        onChange={onInputChange}
+                        labelText={t('Allow this database to be explored')}
+                      />
+                      <InfoTooltip
+                        tooltip={t(
+                          'When enabled, users are able to visualize SQL Lab results in Explore.',
                         )}
                       />
                     </div>
@@ -463,6 +540,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                     value={db?.cache_timeout || ''}
                     placeholder={t('Chart cache timeout')}
                     onChange={onInputChange}
+                    data-test="cache-timeout-test"
                   />
                 </div>
                 <div className="helper">
@@ -473,7 +551,31 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   )}
                 </div>
               </StyledInputContainer>
-              <StyledInputContainer className="mb-0">
+              <StyledInputContainer>
+                <div className="control-label">
+                  {t('Metadata cache timeout')}
+                </div>
+                <div className="input-container">
+                  <input
+                    type="number"
+                    name="metadata_cache_timeout"
+                    value={metaDataCacheTimeout}
+                    placeholder={t('Metadata cache timeout')}
+                    onChange={onInputChange}
+                    data-test="metadata-cache-timeout-test"
+                  />
+                </div>
+                <div className="helper">
+                  {t(
+                    'The metadata_cache_timeout is a cache timeout setting in seconds for ' +
+                      'metadata fetch of this database. Specify it as "metadata_cache_timeout": ' +
+                      '{"schema_cache_timeout": 600, "table_cache_timeout": 600}. If unset, cache ' +
+                      'will not be enabled for the functionality. A timeout of 0 indicates that ' +
+                      'the cache never expires.',
+                  )}
+                </div>
+              </StyledInputContainer>
+              <StyledInputContainer css={{ ...no_margin_bottom }}>
                 <div className="input-container">
                   <IndeterminateCheckbox
                     id="allow_run_async"
@@ -506,7 +608,10 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
             >
               <StyledInputContainer>
                 <div className="control-label">{t('Secure extra')}</div>
-                <div className="input-container">
+                <div
+                  className="input-container"
+                  data-test="secure-extra-editor-test"
+                >
                   <StyledJsonEditor
                     name="encrypted_extra"
                     value={db?.encrypted_extra || ''}
@@ -541,6 +646,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                     value={db?.server_cert || ''}
                     placeholder={t('Root certificate')}
                     onChange={onTextChange}
+                    data-test="root-certificate-test"
                   />
                 </div>
                 <div className="helper">
@@ -550,17 +656,24 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   )}
                 </div>
               </StyledInputContainer>
-            </Collapse.Panel>
-            <Collapse.Panel
-              header={
-                <div>
-                  <h4>Other</h4>
-                  <p className="helper">Additional settings.</p>
+              <StyledInputContainer>
+                <div className="control-label">
+                  {t('Schemas allowed for CSV upload')}
                 </div>
-              }
-              key="4"
-            >
-              <StyledInputContainer className="mb-0">
+                <div className="input-container">
+                  <input
+                    type="text"
+                    name="schemas_allowed_for_csv_upload"
+                    value={schemasAllowed}
+                    placeholder={t('Select one or multiple schemas')}
+                    onChange={onInputChange}
+                  />
+                </div>
+                <div className="helper">
+                  {t('A list of schemas that CSVs are allowed to upload to.')}
+                </div>
+              </StyledInputContainer>
+              <StyledInputContainer css={{ ...no_margin_bottom }}>
                 <div className="input-container">
                   <IndeterminateCheckbox
                     id="impersonate_user"
@@ -580,7 +693,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   />
                 </div>
               </StyledInputContainer>
-              <StyledInputContainer className="mb-0">
+              <StyledInputContainer css={{ ...no_margin_bottom }}>
                 <div className="input-container">
                   <IndeterminateCheckbox
                     id="allow_csv_upload"
@@ -596,9 +709,24 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   />
                 </div>
               </StyledInputContainer>
+            </Collapse.Panel>
+            <Collapse.Panel
+              header={
+                <div>
+                  <h4>Other</h4>
+                  <p className="helper">Additional settings.</p>
+                </div>
+              }
+              key="4"
+            >
               <StyledInputContainer className="extra-container">
-                <div className="control-label">{t('Extra')}</div>
-                <div className="input-container">
+                <div
+                  className="control-label"
+                  data-test="extra-editor-label-test"
+                >
+                  {t('Extra')}
+                </div>
+                <div className="input-container" data-test="extra-editor-test">
                   <StyledJsonEditor
                     name="extra"
                     value={db?.extra ?? defaultExtra}
@@ -614,41 +742,39 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
                   </div>
                   <div>
                     {t(
-                      '1. The engine_params object gets unpacked into the sqlalchemy.create_engine ' +
+                      'The engine_params object gets unpacked into the sqlalchemy.create_engine ' +
                         'call, while the metadata_params gets unpacked into the sqlalchemy.MetaData ' +
                         'call.',
                     )}
                   </div>
-                  <div>
-                    {t(
-                      '2. The metadata_cache_timeout is a cache timeout setting in seconds for ' +
-                        'metadata fetch of this database. Specify it as "metadata_cache_timeout": ' +
-                        '{"schema_cache_timeout": 600, "table_cache_timeout": 600}. If unset, cache ' +
-                        'will not be enabled for the functionality. A timeout of 0 indicates that ' +
-                        'the cache never expires.',
-                    )}
-                  </div>
-                  <div>
-                    {t(
-                      '3. The schemas_allowed_for_csv_upload is a comma separated list of schemas ' +
-                        'that CSVs are allowed to upload to. Specify it as ' +
-                        '"schemas_allowed_for_csv_upload": ["public", "csv_upload"]. If database ' +
-                        'flavor does not support schema or any schema is allowed to be accessed, ' +
-                        'just leave the list empty.',
-                    )}
-                  </div>
-                  <div>
-                    {t(
-                      "4. The version field is a string specifying this db's version. This " +
-                        'should be used with Presto DBs so that the syntax is correct.',
-                    )}
-                  </div>
-                  <div>
-                    {t(
-                      '5. The allows_virtual_table_explore field is a boolean specifying whether ' +
-                        'or not the Explore button in SQL Lab results is shown.',
-                    )}
-                  </div>
+                </div>
+              </StyledInputContainer>
+              <StyledInputContainer>
+                <div className="control-label" data-test="version-label-test">
+                  {t('Version')}
+                </div>
+                <div
+                  className="input-container"
+                  data-test="version-spinbutton-test"
+                >
+                  <input
+                    type="number"
+                    name="version"
+                    /* ----------
+
+                    🚨 Not sure which part of db I should use for value 🚨
+
+                    ---------- */
+                    value={versionNumber}
+                    placeholder={t('Version number')}
+                    onChange={onInputChange}
+                  />
+                </div>
+                <div className="helper">
+                  {t(
+                    'Specify this database’s version. This should be used with ' +
+                      'Presto databases so that the syntax is correct.',
+                  )}
                 </div>
               </StyledInputContainer>
             </Collapse.Panel>
