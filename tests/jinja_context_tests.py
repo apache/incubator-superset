@@ -26,7 +26,6 @@ from superset import app
 from superset.exceptions import SupersetTemplateException
 from superset.jinja_context import (
     ExtraCache,
-    filter_values,
     get_template_processor,
     safe_proxy,
 )
@@ -37,11 +36,11 @@ from tests.base_tests import SupersetTestCase
 class TestJinja2Context(SupersetTestCase):
     def test_filter_values_default(self) -> None:
         with app.test_request_context():
-            self.assertEqual(filter_values("name", "foo"), ["foo"])
+            self.assertEqual(ExtraCache().filter_values("name", "foo"), ["foo"])
 
     def test_filter_values_no_default(self) -> None:
         with app.test_request_context():
-            self.assertEqual(filter_values("name"), [])
+            self.assertEqual(ExtraCache().filter_values("name"), [])
 
     def test_filter_values_adhoc_filters(self) -> None:
         with app.test_request_context(
@@ -61,7 +60,7 @@ class TestJinja2Context(SupersetTestCase):
                 )
             }
         ):
-            self.assertEqual(filter_values("name"), ["foo"])
+            self.assertEqual(ExtraCache().filter_values("name"), ["foo"])
 
         with app.test_request_context(
             data={
@@ -80,7 +79,7 @@ class TestJinja2Context(SupersetTestCase):
                 )
             }
         ):
-            self.assertEqual(filter_values("name"), ["foo", "bar"])
+            self.assertEqual(ExtraCache().filter_values("name"), ["foo", "bar"])
 
     def test_filter_values_extra_filters(self) -> None:
         with app.test_request_context(
@@ -90,7 +89,7 @@ class TestJinja2Context(SupersetTestCase):
                 )
             }
         ):
-            self.assertEqual(filter_values("name"), ["foo"])
+            self.assertEqual(ExtraCache().filter_values("name"), ["foo"])
 
     def test_url_param_default(self) -> None:
         with app.test_request_context():
