@@ -566,7 +566,7 @@ class TestPostProcessing(SupersetTestCase):
         df = proc.prophet(
             df=prophet_df, time_grain="P1M", periods=3, confidence_interval=0.9
         )
-        columns = {column for column in df.columns}
+        columns = set(df.columns)
         assert columns == {
             DTTM_ALIAS,
             "a__yhat",
@@ -655,7 +655,7 @@ class TestPostProcessing(SupersetTestCase):
             whisker_type=PostProcessingBoxplotWhiskerType.TUKEY,
             metrics=["cars"],
         )
-        columns = {column for column in df.columns}
+        columns = set(df.columns)
         assert columns == {
             "cars__mean",
             "cars__median",
@@ -676,7 +676,7 @@ class TestPostProcessing(SupersetTestCase):
             whisker_type=PostProcessingBoxplotWhiskerType.MINMAX,
             metrics=["cars"],
         )
-        columns = {column for column in df.columns}
+        columns = set(df.columns)
         assert columns == {
             "cars__mean",
             "cars__median",
@@ -698,7 +698,7 @@ class TestPostProcessing(SupersetTestCase):
             metrics=["cars"],
             percentiles=[1, 99],
         )
-        columns = {column for column in df.columns}
+        columns = set(df.columns)
         assert columns == {
             "cars__mean",
             "cars__median",
