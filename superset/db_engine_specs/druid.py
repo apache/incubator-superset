@@ -17,11 +17,24 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Match,
+    Optional,
+    Pattern,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
+
+from sqlalchemy.types import TIMESTAMP, TypeEngine
 
 from superset.db_engine_specs.base import BaseEngineSpec
 from superset.exceptions import SupersetException
 from superset.utils import core as utils
+from superset.utils.core import ColumnSpec, GenericDataType
 
 if TYPE_CHECKING:
     from superset.connectors.sqla.models import TableColumn
@@ -53,11 +66,6 @@ class DruidEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
         "P0.25Y": "FLOOR({col} TO QUARTER)",
         "P1Y": "FLOOR({col} TO YEAR)",
     }
-
-    @classmethod
-    def alter_new_orm_column(cls, orm_col: "TableColumn") -> None:
-        if orm_col.column_name == "__time":
-            orm_col.is_dttm = True
 
     @staticmethod
     def get_extra_params(database: "Database") -> Dict[str, Any]:
@@ -91,3 +99,25 @@ class DruidEngineSpec(BaseEngineSpec):  # pylint: disable=abstract-method
         if tt in (utils.TemporalType.DATETIME, utils.TemporalType.TIMESTAMP):
             return f"""TIME_PARSE('{dttm.isoformat(timespec="seconds")}')"""
         return None
+
+    @classmethod
+    def get_column_spec(  # type: ignore
+        # pylint: disable=arguments-differ
+        cls,
+        column_name: Optional[str] = "",
+        column_type_mappings: Tuple[
+            Tuple[
+                Pattern[str],
+                Union[TypeEngine, Callable[[Match[str]], TypeEngine]],
+                GenericDataType,
+            ],
+            ...,
+        ] = (),
+        native_type: Optional[str] = "",
+        source: utils.ColumnTypeSource = utils.ColumnTypeSource.GET_TABLE,
+    ) -> Union[ColumnSpec, None]:
+
+        if column_name == "__time":
+            return ColumnSpec(TIMESTAMP(), GenericDataType.TEMPORAL, True)
+
+        return super().get_column_spec(native_type)
