@@ -178,6 +178,11 @@ class BaseViz:
         self.all_metrics = list(self.metric_dict.values())
         self.metric_labels = list(self.metric_dict.keys())
 
+    def construct_where(self, query_obj: Optional[str], predicate_string: str) -> str:
+        if query_obj:
+            predicate_string = f"({query_obj}) AND ({predicate_string})"
+        return predicate_string
+
     @staticmethod
     def handle_js_int_overflow(
         data: Dict[str, List[Dict[str, Any]]]
@@ -2060,6 +2065,11 @@ class FilterBoxViz(BaseViz):
         qry = super().query_obj()
         filters = self.form_data.get("filter_configs") or []
         qry["row_limit"] = self.filter_row_limit
+        predicate_string = self.datasource.fetch_values_predicate
+        if predicate_string:
+            qry["extras"]["where"] = self.construct_where(
+                qry["extras"]["where"], predicate_string
+            )
         self.dataframes = {}
         for flt in filters:
             col = flt.get("column")
