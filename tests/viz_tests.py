@@ -1479,3 +1479,91 @@ class TestPivotTableViz(SupersetTestCase):
     def test_format_datetime_from_int(self):
         assert viz.PivotTableViz._format_datetime(123) == 123
         assert viz.PivotTableViz._format_datetime(123.0) == 123.0
+
+
+class TestTreemapViz(SupersetTestCase):
+    def test_nest2(self):
+        datasource = self.get_datasource_mock()
+        form_data = {}
+        test_viz = viz.TreemapViz(datasource, form_data)
+        df = pd.DataFrame(
+            {"a": [1, 2, 3, 4, 5, 6, 7, 8]},
+            index=[[1, 1, 1, 1, 2, 2, 2, 2], [11, 11, 12, 12, 21, 21, 22, 22]],
+        )
+        result = test_viz._nest(metric="a", df=df)
+        expected = [
+            {
+                "name": 1,
+                "children": [
+                    {"name": 11, "value": 1},
+                    {"name": 11, "value": 2},
+                    {"name": 12, "value": 3},
+                    {"name": 12, "value": 4},
+                ],
+            },
+            {
+                "name": 2,
+                "children": [
+                    {"name": 21, "value": 5},
+                    {"name": 21, "value": 6},
+                    {"name": 22, "value": 7},
+                    {"name": 22, "value": 8},
+                ],
+            },
+        ]
+        self.assertEqual(result, expected)
+
+    def test_nest3(self):
+        datasource = self.get_datasource_mock()
+        form_data = {}
+        test_viz = viz.TreemapViz(datasource, form_data)
+        df = pd.DataFrame(
+            {"a": [1, 2, 3, 4, 5, 6, 7, 8]},
+            index=[
+                [1, 1, 1, 1, 2, 2, 2, 2],
+                [11, 11, 12, 12, 21, 21, 22, 22],
+                [111, 112, 121, 122, 211, 212, 221, 222],
+            ],
+        )
+        result = test_viz._nest(metric="a", df=df)
+        expected = [
+            {
+                "name": 1,
+                "children": [
+                    {
+                        "name": 11,
+                        "children": [
+                            {"name": 111, "value": 1},
+                            {"name": 112, "value": 2},
+                        ],
+                    },
+                    {
+                        "name": 12,
+                        "children": [
+                            {"name": 121, "value": 3},
+                            {"name": 122, "value": 4},
+                        ],
+                    },
+                ],
+            },
+            {
+                "name": 2,
+                "children": [
+                    {
+                        "name": 21,
+                        "children": [
+                            {"name": 211, "value": 5},
+                            {"name": 212, "value": 6},
+                        ],
+                    },
+                    {
+                        "name": 22,
+                        "children": [
+                            {"name": 221, "value": 7},
+                            {"name": 222, "value": 8},
+                        ],
+                    },
+                ],
+            },
+        ]
+        self.assertEqual(result, expected)

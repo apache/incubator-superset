@@ -974,9 +974,15 @@ class TreemapViz(BaseViz):
         if nlevels == 1:
             result = [{"name": n, "value": v} for n, v in zip(df.index, df[metric])]
         else:
+            this_level_index_set = set()
+            this_level_index = []
+            for i in df.index:
+                if i[0] not in this_level_index_set:
+                    this_level_index.append(i[0])
+                    this_level_index_set.add(i[0])
             result = [
                 {"name": l, "children": self._nest(metric, df.loc[l])}
-                for l in df.index.levels[0]
+                for l in this_level_index
             ]
         return result
 
