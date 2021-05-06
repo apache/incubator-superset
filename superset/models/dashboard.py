@@ -160,6 +160,9 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
     def __repr__(self) -> str:
         return f"Dashboard<{self.id or self.slug}>"
 
+    def __str__(self) -> str:
+        return self.dashboard_title
+
     @property
     def table_names(self) -> str:
         # pylint: disable=no-member
