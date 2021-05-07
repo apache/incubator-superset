@@ -29,6 +29,8 @@ down_revision = "f1410ed7ec95"
 import sqlalchemy as sa
 from alembic import op
 
+from superset.models.core import ConfigurationMethod
+
 
 def upgrade():
     with op.batch_alter_table("dbs") as batch_op:
@@ -36,7 +38,7 @@ def upgrade():
             sa.Column(
                 "configuration_method",
                 sa.VARCHAR(255),
-                server_default="sqlalchemy_form",
+                server_default=ConfigurationMethod.SQLALCHEMY_URI.value,
             )
         )
 
