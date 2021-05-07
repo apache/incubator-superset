@@ -38,7 +38,7 @@ def upgrade():
             sa.Column(
                 "configuration_method",
                 sa.VARCHAR(255),
-                server_default=ConfigurationMethod.SQLALCHEMY_URI,
+                server_default=ConfigurationMethod.SQLALCHEMY_URI.value,
             )
         )
 
