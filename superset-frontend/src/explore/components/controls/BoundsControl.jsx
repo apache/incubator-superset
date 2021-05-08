@@ -20,8 +20,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col } from 'src/common/components';
 import { FormGroup, FormControl } from 'react-bootstrap';
-import { t } from '@superset-ui/core';
-import ControlHeader from '../ControlHeader';
+import { t, styled } from '@superset-ui/core';
+import _ from 'lodash';
+import ControlHeader from 'src/explore/components/ControlHeader';
 
 const propTypes = {
   onChange: PropTypes.func,
@@ -32,6 +33,10 @@ const defaultProps = {
   onChange: () => {},
   value: [null, null],
 };
+
+const StyledFormGroup = styled(FormGroup)`
+  margin-bottom: 0px;
+`;
 
 export default class BoundsControl extends React.Component {
   constructor(props) {
@@ -45,6 +50,22 @@ export default class BoundsControl extends React.Component {
     this.onChange = this.onChange.bind(this);
     this.onMinChange = this.onMinChange.bind(this);
     this.onMaxChange = this.onMaxChange.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (!_.isEqual(prevProps.value, this.props.value)) {
+      this.update();
+    }
+  }
+
+  update() {
+    this.setState({
+      minMax: [
+        Number.isNaN(this.props.value[0]) ? '' : this.props.value[0],
+        Number.isNaN(this.props.value[1]) ? '' : this.props.value[1],
+      ],
+    });
   }
 
   onMinChange(event) {
@@ -87,8 +108,8 @@ export default class BoundsControl extends React.Component {
     return (
       <div>
         <ControlHeader {...this.props} />
-        <FormGroup bsSize="small">
-          <Row gutter={16}>
+        <StyledFormGroup bsSize="small">
+          <Row gutter={4}>
             <Col xs={12}>
               <FormControl
                 data-test="min-bound"
@@ -108,7 +129,7 @@ export default class BoundsControl extends React.Component {
               />
             </Col>
           </Row>
-        </FormGroup>
+        </StyledFormGroup>
       </div>
     );
   }
