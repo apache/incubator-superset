@@ -30,6 +30,7 @@ import { debounce } from 'lodash';
 import ErrorMessageWithStackTrace from 'src/components/ErrorMessage/ErrorMessageWithStackTrace';
 import { SaveDatasetModal } from 'src/SqlLab/components/SaveDatasetModal';
 import { put as updateDatset } from 'src/api/dataset';
+import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import Loading from '../../components/Loading';
 import ExploreCtasResultsButton from './ExploreCtasResultsButton';
 import ExploreResultsButton from './ExploreResultsButton';
@@ -42,7 +43,7 @@ import { exploreChart } from '../../explore/exploreUtils';
 import { CtasEnum } from '../actions/sqlLab';
 import { Query } from '../types';
 
-const SEARCH_HEIGHT = 46;
+const SEARCH_HEIGHT = 50;
 
 enum DatasetRadioState {
   SAVE_NEW = 1,
@@ -55,6 +56,13 @@ const EXPLORE_CHART_DEFAULT = {
   time_range: 'No filter',
   viz_type: 'table',
 };
+
+enum LIMITING_FACTOR {
+  QUERY = 'QUERY',
+  QUERY_AND_DROPDOWN = 'QUERY_AND_DROPDOWN',
+  NOT_LIMITED = 'NOT_LIMITED',
+  DROPDOWN = 'DROPDOWN',
+}
 
 const LOADING_STYLES: CSSProperties = { position: 'relative', minHeight: 100 };
 
@@ -75,6 +83,7 @@ interface ResultSetProps {
   search?: boolean;
   showSql?: boolean;
   visualize?: boolean;
+  user: UserWithPermissionsAndRoles;
 }
 
 interface ResultSetState {
@@ -103,6 +112,10 @@ const MonospaceDiv = styled.div`
 const ReturnedRows = styled.div`
   font-size: 13px;
   line-height: 24px;
+  .limitMessage {
+    color: ${({ theme }) => theme.colors.secondary.light1};
+    margin-left: ${({ theme }) => theme.gridUnit * 2}px;
+  }
 `;
 const ResultSetControls = styled.div`
   display: flex;
@@ -321,12 +334,7 @@ export default class ResultSet extends React.PureComponent<
   getUserDatasets = async (searchText = '') => {
     // Making sure that autocomplete input has a value before rendering the dropdown
     // Transforming the userDatasetsOwned data for SaveModalComponent)
-    const appContainer = document.getElementById('app');
-    const bootstrapData = JSON.parse(
-      appContainer?.getAttribute('data-bootstrap') || '{}',
-    );
-
-    if (bootstrapData.user && bootstrapData.user.userId) {
+    if (this.props.user?.userId) {
       const queryParams = rison.encode({
         filters: [
           {
@@ -337,7 +345,7 @@ export default class ResultSet extends React.PureComponent<
           {
             col: 'owners',
             opr: 'rel_m_m',
-            value: bootstrapData.user.userId,
+            value: this.props.user.userId,
           },
         ],
         order_column: 'changed_on_delta_humanized',
@@ -502,21 +510,74 @@ export default class ResultSet extends React.PureComponent<
   }
 
   renderRowsReturned() {
-    const { results, rows, queryLimit } = this.props.query;
+    const { results, rows, queryLimit, limitingFactor } = this.props.query;
     const limitReached = results?.displayLimitReached;
+    let limitMessage;
+    const isAdmin = this.props.user?.roles.hasOwnProperty('Admin');
+    const defaultDropdownLimit = queryLimit === 1000;
+    const defaultDropdown =
+      limitingFactor === LIMITING_FACTOR.DROPDOWN && defaultDropdownLimit;
+    const adminWarning = isAdmin
+      ? ' by the configuration DISPLAY_MAX_ROWS'
+      : null;
+    if (limitingFactor === LIMITING_FACTOR.QUERY && this.props.csv) {
+      limitMessage = (
+        <span className="limitMessage">
+          {t(
+            `The number of rows displayed is limited to %s by the query`,
+            rows,
+          )}
+        </span>
+      );
+    } else if (
+      limitingFactor === LIMITING_FACTOR.DROPDOWN &&
+      !defaultDropdown
+    ) {
+      limitMessage = (
+        <span className="limitMessage">
+          {t(
+            `The number of rows displayed is limited to %s by the limit dropdown.`,
+            rows,
+          )}
+        </span>
+      );
+    } else if (limitingFactor === LIMITING_FACTOR.QUERY_AND_DROPDOWN) {
+      limitMessage = (
+        <span className="limitMessage">
+          {t(
+            `The number of rows displayed is limited to %s by the query limit dropdown.`,
+            rows,
+          )}
+        </span>
+      );
+    }
     return (
       <ReturnedRows>
-        {!limitReached && (
-          <Alert type="warning" message={t(`%s rows returned`, rows)} />
+        {!limitReached && !defaultDropdown && (
+          <span>
+            {t(`%s rows returned`, rows)} {limitMessage}
+          </span>
+        )}
+        {!limitReached && defaultDropdown && (
+          <Alert
+            type="warning"
+            message={t(`%s rows returned`, rows)}
+            description={t(
+              `The number of rows displayed is limited to %s by the dropdown.`,
+              rows,
+            )}
+          />
         )}
         {limitReached && (
           <Alert
             type="warning"
-            message={t(
-              `The number of results displayed is limited to %s. Please add
+            message={t(`%s rows returned`, rows)}
+            description={t(
+              `The number of results displayed is limited to %s%s. Please add
             additional limits/filters or download to csv to see more rows up to
-            the %s limit.`,
+            the %s limit. %s`,
               rows,
+              adminWarning,
               queryLimit,
             )}
           />
