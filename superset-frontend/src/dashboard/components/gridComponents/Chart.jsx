@@ -40,6 +40,8 @@ const propTypes = {
   id: PropTypes.number.isRequired,
   componentId: PropTypes.string.isRequired,
   dashboardId: PropTypes.number.isRequired,
+  showFilterBadge: PropTypes.bool.isRequired,
+  showCrossFilterBadge: PropTypes.bool.isRequired,
   width: PropTypes.number.isRequired,
   height: PropTypes.number.isRequired,
   updateSliceName: PropTypes.func.isRequired,
@@ -254,6 +256,8 @@ export default class Chart extends React.Component {
       id,
       componentId,
       dashboardId,
+      showFilterBadge,
+      showCrossFilterBadge,
       chart,
       slice,
       datasource,
@@ -328,6 +332,8 @@ export default class Chart extends React.Component {
           sliceCanEdit={sliceCanEdit}
           componentId={componentId}
           dashboardId={dashboardId}
+          showFilterBadge={showFilterBadge}
+          showCrossFilterBadge={showCrossFilterBadge}
           filters={filters}
           addSuccessToast={addSuccessToast}
           addDangerToast={addDangerToast}
