@@ -19,7 +19,7 @@
 import React from 'react';
 import Button from 'src/components/Button';
 import Icon from 'src/components/Icon';
-import ToastPresenter from 'src/messageToasts/containers/ToastPresenter';
+import ToastContainer from 'src/components/MessageToasts/ToastContainer';
 import CopyToClipboard from '.';
 
 export default {
@@ -37,7 +37,7 @@ export const InteractiveCopyToClipboard = ({ copyNode, ...rest }: any) => {
   return (
     <>
       <CopyToClipboard copyNode={node} {...rest} />
-      <ToastPresenter />
+      <ToastContainer />
     </>
   );
 };

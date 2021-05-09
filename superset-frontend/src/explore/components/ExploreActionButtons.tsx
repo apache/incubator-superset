@@ -22,7 +22,7 @@ import { t } from '@superset-ui/core';
 import Icon from 'src/components/Icon';
 import { Tooltip } from 'src/components/Tooltip';
 import copyTextToClipboard from 'src/utils/copy';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 import { useUrlShortener } from 'src/common/hooks/useUrlShortener';
 import EmbedCodeButton from './EmbedCodeButton';
 import ConnectedDisplayQueryButton from './DisplayQueryButton';

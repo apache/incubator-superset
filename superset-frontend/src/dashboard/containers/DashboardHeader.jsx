@@ -18,12 +18,9 @@
  */
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-
-import DashboardHeader from '../components/Header';
-import isDashboardLoading from '../util/isDashboardLoading';
-
-import { dashboardInfoChanged } from '../actions/dashboardInfo';
-
+import DashboardHeader from 'src/dashboard/components/Header';
+import isDashboardLoading from 'src/dashboard/util/isDashboardLoading';
+import { dashboardInfoChanged } from 'src/dashboard/actions/dashboardInfo';
 import {
   setEditMode,
   showBuilderPane,
@@ -38,23 +35,20 @@ import {
   setMaxUndoHistoryExceeded,
   maxUndoHistoryToast,
   setRefreshFrequency,
-} from '../actions/dashboardState';
-
+} from 'src/dashboard/actions/dashboardState';
 import {
   undoLayoutAction,
   redoLayoutAction,
   updateDashboardTitle,
   dashboardTitleChanged,
-} from '../actions/dashboardLayout';
-
+} from 'src/dashboard/actions/dashboardLayout';
 import {
   addSuccessToast,
   addDangerToast,
   addWarningToast,
-} from '../../messageToasts/actions';
-
-import { logEvent } from '../../logger/actions';
-import { DASHBOARD_HEADER_ID } from '../util/constants';
+} from 'src/components/MessageToasts/actions';
+import { logEvent } from 'src/logger/actions';
+import { DASHBOARD_HEADER_ID } from 'src/dashboard/util/constants';
 
 function mapStateToProps({
   dashboardLayout: undoableLayout,

@@ -32,9 +32,9 @@ import Button from 'src/components/Button';
 import { useListViewResource } from 'src/views/CRUD/hooks';
 import Dataset from 'src/types/Dataset';
 import { useDebouncedEffect } from 'src/explore/exploreUtils';
-import { getClientErrorObject } from '../utils/getClientErrorObject';
-import Loading from '../components/Loading';
-import withToasts from '../messageToasts/enhancers/withToasts';
+import { getClientErrorObject } from 'src/utils/getClientErrorObject';
+import Loading from 'src/components/Loading';
+import withToasts from 'src/components/MessageToasts/withToasts';
 
 const CONFIRM_WARNING_MESSAGE = t(
   'Warning! Changing the dataset may break the chart if the metadata does not exist.',

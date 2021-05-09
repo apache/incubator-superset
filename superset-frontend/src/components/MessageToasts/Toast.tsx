@@ -21,8 +21,7 @@ import cx from 'classnames';
 import Interweave from 'interweave';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Icon, { IconName } from 'src/components/Icon';
-import { ToastType } from 'src/messageToasts/constants';
-import { ToastMeta } from '../types';
+import { ToastType, ToastMeta } from './types';
 
 const ToastContainer = styled.div`
   display: flex;

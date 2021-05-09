@@ -23,7 +23,7 @@ import {
   DatasourceMeta,
 } from '@superset-ui/chart-controls';
 import { CommonBootstrapData } from 'src/types/bootstrapTypes';
-import getToastsFromPyFlashMessages from 'src/messageToasts/utils/getToastsFromPyFlashMessages';
+import getToastsFromPyFlashMessages from 'src/components/MessageToasts/getToastsFromPyFlashMessages';
 
 import { ChartState, Slice } from 'src/explore/types';
 import { getChartKey } from 'src/explore/exploreUtils';

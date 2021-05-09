@@ -23,7 +23,7 @@ import { isEmpty, isNil } from 'lodash';
 import Icon from 'src/components/Icon';
 import Modal from 'src/components/Modal';
 import TableSelector from 'src/components/TableSelector';
-import withToasts from 'src/messageToasts/enhancers/withToasts';
+import withToasts from 'src/components/MessageToasts/withToasts';
 
 type DatasetAddObject = {
   id: number;
