@@ -39,5 +39,5 @@ class TestDBConnections(SupersetTestCase):
             check_sqlalchemy_uri(make_url("shillelagh:///home/superset/bad.db"))
         assert (
             str(excinfo.value)
-            == "shillelagh cannot be used as a data source for security reasons."
+            == "APSWDialect cannot be used as a data source for security reasons."
         )

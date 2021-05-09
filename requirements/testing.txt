@@ -16,6 +16,7 @@
 # via virtualenv
 appnope==0.1.0
 # via ipython
+# via shillelagh
 astroid==2.4.2
 # via pylint
 # via aiohttp
@@ -112,6 +113,7 @@ freezegun==1.0.0
 # via -r requirements/testing.in
 # via pyhive
 # via geopy
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via apache-superset
@@ -265,6 +267,7 @@ pytest==6.1.2
 #   holidays
 #   pandas
 #   pyhive
+#   shillelagh
 #   tableschema
 # via apache-superset
 # via alembic
@@ -295,6 +298,7 @@ pytest==6.1.2
 # via
 #   pyhive
 #   thrift-sasl
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via
@@ -362,6 +366,7 @@ traitlets==5.0.5
 # via
 #   aiohttp
 #   apache-superset
+#   shillelagh
 # via
 #   tableschema
 #   tabulator

@@ -17,10 +17,10 @@
 from superset.db_engine_specs.sqlite import SqliteEngineSpec
 
 
-class GSheetsEngineSpec(SqliteEngineSpec):
-    """Engine for Google spreadsheets"""
+class ShillelaghEngineSpec(SqliteEngineSpec):
+    """Engine for shillelagh"""
 
-    engine = "gsheets"
-    engine_name = "Google Sheets"
+    engine = "shillelagh"
+    engine_name = "Shillelagh"
     allows_joins = True
     allows_subqueries = True

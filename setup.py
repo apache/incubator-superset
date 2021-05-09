@@ -62,7 +62,15 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    entry_points={"console_scripts": ["superset=superset.cli:superset"]},
+    entry_points={
+        "console_scripts": ["superset=superset.cli:superset"],
+        "shillelagh.adapter": [
+            "superset=superset.db_engine_specs.superset:SupersetShillelaghAdapter"
+        ],
+        "sqlalchemy.dialects": [
+            "superset=superset.db_engine_specs.superset:SupersetAPSWDialect"
+        ],
+    },
     install_requires=[
         "backoff>=1.8.0",
         "bleach>=3.0.2, <4.0.0",
@@ -102,6 +110,7 @@ setup(
         "redis",
         "retry>=0.9.2",
         "selenium>=3.141.0",
+        "shillelagh>=0.4.3,<0.5",
         "simplejson>=3.15.0",
         "slackclient==2.5.0",  # PINNED! slack changes file upload api in the future versions
         "sqlalchemy>=1.3.16, <1.4, !=1.3.21",
@@ -133,7 +142,7 @@ setup(
         "exasol": ["sqlalchemy-exasol>=2.1.0, <2.2"],
         "excel": ["xlrd>=1.2.0, <1.3"],
         "firebird": ["sqlalchemy-firebird>=0.7.0, <0.8"],
-        "gsheets": ["shillelagh[gsheetsapi]>=0.2, <0.3"],
+        "gsheets": ["shillelagh[gsheetsapi]>=0.4.3,<0.5"],
         "hana": ["hdbcli==2.4.162", "sqlalchemy_hana==0.4.0"],
         "hive": ["pyhive[hive]>=0.6.1", "tableschema", "thrift>=0.11.0, <1.0.0"],
         "impala": ["impyla>0.16.2, <0.17"],

@@ -12,6 +12,7 @@
 # via flask-migrate
 # via kombu
 # via flask-appbuilder
+# via shillelagh
 # via aiohttp
 # via
 #   aiohttp
@@ -93,6 +94,7 @@ flask-cors==3.0.9
 future==0.18.2
 # via pyhive
 # via geopy
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via apache-superset
@@ -193,6 +195,7 @@ pyhive[hive]==0.6.3
 #   holidays
 #   pandas
 #   pyhive
+#   shillelagh
 #   tableschema
 # via apache-superset
 # via alembic
@@ -223,6 +226,7 @@ sasl==0.2.1
 # via
 #   pyhive
 #   thrift-sasl
+# via apache-superset
 # via apache-superset
 # via apache-superset
 # via
@@ -276,6 +280,7 @@ thrift==0.13.0
 # via
 #   aiohttp
 #   apache-superset
+#   shillelagh
 unicodecsv==0.14.1
 # via
 #   tableschema
