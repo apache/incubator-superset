@@ -37,6 +37,15 @@ export const WORLD_HEALTH_CHARTS = [
   { name: 'Box plot', viz: 'box_plot' },
 ] as const;
 
+export const VIDEO_GAME_SALES_CHARTS = [
+  { name: 'Global Sales per Console', viz: 'area' },
+  { name: 'Top 10 Games (by Global Sales)', viz: 'table' },
+  { name: 'Publishers of Top 25 Games', viz: 'pie' },
+  { name: 'Top 10 Consoles, by # of Hit Games', viz: 'treemap' },
+  { name: 'Popular Genres Across Platforms', viz: 'heatmap' },
+  { name: 'Top 10 Games: Proportion of Sales in Markets', viz: 'dist_bar' },
+];
+
 /** Used to specify charts expected by the test suite */
 export interface ChartSpec {
   name: string;
@@ -110,8 +119,8 @@ export function drag(selector: string, content: string | number | RegExp) {
       (typeof target === 'string' ? cy.get(target) : target)
         .trigger('dragover', { dataTransfer })
         .trigger('drop', { dataTransfer })
-        .trigger('dragend', { dataTransfer })
-        .trigger('mouseup', { which: 1 });
+        .trigger('dragend', { dataTransfer, force: true })
+        .trigger('mouseup', { which: 1, force: true });
     },
   };
 }
