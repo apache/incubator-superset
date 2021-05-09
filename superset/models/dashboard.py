@@ -155,6 +155,7 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         "description",
         "css",
         "slug",
+        "published",
     ]
 
     def __repr__(self) -> str:

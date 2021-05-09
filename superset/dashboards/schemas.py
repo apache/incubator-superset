@@ -286,3 +286,4 @@ class ImportV1DashboardSchema(Schema):
     position = fields.Dict()
     metadata = fields.Dict()
     version = fields.String(required=True)
+    published = fields.Boolean(allow_none=True)
