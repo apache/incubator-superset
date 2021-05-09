@@ -16,8 +16,63 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import React from 'react';
+import { Input } from 'antd';
+import { styled } from '@superset-ui/core';
 import Form from './Form';
 import FormItem from './FormItem';
 import FormLabel from './FormLabel';
+
+interface LabeledErrorBoundInputProps {
+  label?: string;
+  name: string;
+  validationMethods:
+    | { onBlur: (value: any) => void }
+    | { onChange: (value: any) => void };
+  errorMessage: string | null;
+  helpText?: string;
+  value: string | number | readonly string[] | undefined;
+  required?: boolean;
+  placeholder?: string;
+  autocomplete?: string;
+  type?: string;
+  id?: string;
+}
+
+const StyledInput = styled(Input)`
+  margin: 8px 0;
+`;
+
+const LabeledErrorBoundInput = ({
+  label,
+  name,
+  validationMethods,
+  errorMessage,
+  helpText,
+  value,
+  required = false,
+  placeholder,
+  autocomplete,
+  type,
+  id,
+}: LabeledErrorBoundInputProps) => (
+  <>
+    <FormLabel required={required}>{label}</FormLabel>
+    <FormItem
+      name={name}
+      validateTrigger={Object.keys(validationMethods)}
+      validateStatus={errorMessage ? 'error' : 'success'}
+      help={errorMessage || helpText}
+      id={id}
+      placeholder={placeholder}
+      autocomplete={autocomplete}
+      type={type}
+    >
+      <StyledInput value={value} {...validationMethods} />
+    </FormItem>
+  </>
+);
+
+export default LabeledErrorBoundInput;
 
 export { Form, FormItem, FormLabel };
