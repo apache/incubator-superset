@@ -16,6 +16,7 @@
 # under the License.
 # pylint: disable=line-too-long,unused-argument,ungrouped-imports
 """A collection of ORM sqlalchemy models for Superset"""
+import enum
 import json
 import logging
 import textwrap
@@ -97,6 +98,11 @@ class CssTemplate(Model, AuditMixinNullable):
     id = Column(Integer, primary_key=True)
     template_name = Column(String(250))
     css = Column(Text, default="")
+
+
+class ConfigurationMethod(str, enum.Enum):
+    SQLALCHEMY_URI = "sqlalchemy_form"
+    DYNAMIC_FORM = "dynamic_form"
 
 
 class Database(
