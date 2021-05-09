@@ -22,6 +22,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Set, Union
 
 import sqlalchemy as sqla
+from flask import g
 from flask_appbuilder import Model
 from flask_appbuilder.models.decorators import renders
 from flask_appbuilder.security.sqla.models import User
@@ -45,10 +46,12 @@ from sqlalchemy.sql import join, select
 from sqlalchemy.sql.elements import BinaryExpression
 
 from superset import app, ConnectorRegistry, db, is_feature_enabled, security_manager
+from superset.common.request_contexed_based import is_user_admin
 from superset.connectors.base.models import BaseDatasource
 from superset.connectors.druid.models import DruidColumn, DruidMetric
 from superset.connectors.sqla.models import SqlMetric, TableColumn
 from superset.extensions import cache_manager
+from superset.models.filter_set import FilterSet
 from superset.models.helpers import AuditMixinNullable, ImportExportMixin
 from superset.models.slice import Slice
 from superset.models.tags import DashboardUpdater
@@ -148,6 +151,9 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
     owners = relationship(security_manager.user_model, secondary=dashboard_user)
     published = Column(Boolean, default=False)
     roles = relationship(security_manager.role_model, secondary=DashboardRoles)
+    _filter_sets = relationship(
+        "FilterSet", back_populates="dashboard", cascade="all, delete"
+    )
     export_fields = [
         "dashboard_title",
         "position_json",
@@ -159,6 +165,23 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
 
     def __repr__(self) -> str:
         return f"Dashboard<{self.id or self.slug}>"
+
+    @property
+    def filter_sets(self) -> Dict[int, FilterSet]:
+        return {fs.id: fs for fs in self._filter_sets}
+
+    @property
+    def filter_sets_lst(self) -> Dict[int, FilterSet]:
+        if is_user_admin():
+            return self._filter_sets
+        current_user = g.user.id
+        mapa: Dict[str, List[Any]] = {"Dashboard": [], "User": []}
+        for fs in self._filter_sets:
+            mapa[fs.owner_type].append(fs)
+        rv = list(
+            filter(lambda filter_set: filter_set.owner_id == current_user, mapa["User"])
+        )
+        return {fs.id: fs for fs in rv + mapa["Dashboard"]}
 
     @property
     def table_names(self) -> str:
@@ -365,6 +388,11 @@ class Dashboard(  # pylint: disable=too-many-instance-attributes
         session = db.session()
         qry = session.query(Dashboard).filter(id_or_slug_filter(id_or_slug))
         return qry.one_or_none()
+
+    def am_i_owner(self) -> bool:
+        if g.user is None or g.user.is_anonymous or not g.user.is_authenticated:
+            return False
+        return g.user.id in set(map(lambda user: user.id, self.owners))
 
 
 def id_or_slug_filter(id_or_slug: str) -> BinaryExpression:
