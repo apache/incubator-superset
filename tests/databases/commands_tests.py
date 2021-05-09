@@ -72,7 +72,6 @@ class TestExportDatabasesCommand(SupersetTestCase):
             "metadata.yaml",
             "databases/examples.yaml",
             "datasets/examples/energy_usage.yaml",
-            "datasets/examples/wb_health_population.yaml",
             "datasets/examples/birth_names.yaml",
         }
         expected_extra = {
@@ -86,7 +85,6 @@ class TestExportDatabasesCommand(SupersetTestCase):
                 **expected_extra,
                 "engine_params": {"connect_args": {"poll_interval": 0.1}},
             }
-
         assert core_files.issubset(set(contents.keys()))
 
         if example_db.backend == "postgresql":
@@ -104,9 +102,9 @@ class TestExportDatabasesCommand(SupersetTestCase):
         metadata = yaml.safe_load(contents["databases/examples.yaml"])
         assert metadata == (
             {
-                "allow_csv_upload": True,
-                "allow_ctas": True,
-                "allow_cvas": True,
+                "allow_csv_upload": False,
+                "allow_ctas": False,
+                "allow_cvas": False,
                 "allow_run_async": False,
                 "cache_timeout": None,
                 "database_name": "examples",

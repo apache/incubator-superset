@@ -36,7 +36,7 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.db_engine_specs.mysql import MySQLEngineSpec
 from superset.db_engine_specs.postgres import PostgresEngineSpec
 from superset.errors import SupersetError
-from superset.models.core import Database
+from superset.models.core import Database, ConfigurationMethod
 from superset.models.reports import ReportSchedule, ReportScheduleType
 from superset.utils.core import get_example_database, get_main_database
 from tests.base_tests import SupersetTestCase
@@ -228,6 +228,7 @@ class TestDatabaseApi(SupersetTestCase):
         database_data = {
             "database_name": "test-create-database",
             "sqlalchemy_uri": example_db.sqlalchemy_uri_decrypted,
+            "configuration_method": ConfigurationMethod.SQLALCHEMY_URI,
             "server_cert": None,
             "extra": json.dumps(extra),
         }
@@ -240,6 +241,34 @@ class TestDatabaseApi(SupersetTestCase):
         model = db.session.query(Database).get(response.get("id"))
         db.session.delete(model)
         db.session.commit()
+
+    def test_create_database_invalid_configuration_method(self):
+        """
+        Database API: Test create
+        """
+        extra = {
+            "metadata_params": {},
+            "engine_params": {},
+            "metadata_cache_timeout": {},
+            "schemas_allowed_for_csv_upload": [],
+        }
+
+        self.login(username="admin")
+        example_db = get_example_database()
+        if example_db.backend == "sqlite":
+            return
+        database_data = {
+            "database_name": "test-create-database",
+            "sqlalchemy_uri": example_db.sqlalchemy_uri_decrypted,
+            "configuration_method": "BAD_FORM",
+            "server_cert": None,
+            "extra": json.dumps(extra),
+        }
+
+        uri = "api/v1/database/"
+        rv = self.client.post(uri, json=database_data)
+        response = json.loads(rv.data.decode("utf-8"))
+        self.assertEqual(rv.status_code, 400)
 
     def test_create_database_server_cert_validate(self):
         """
@@ -344,6 +373,7 @@ class TestDatabaseApi(SupersetTestCase):
         database_data = {
             "database_name": "examples",
             "sqlalchemy_uri": example_db.sqlalchemy_uri_decrypted,
+            "configuration_method": ConfigurationMethod.SQLALCHEMY_URI,
         }
 
         uri = "api/v1/database/"
@@ -412,6 +442,7 @@ class TestDatabaseApi(SupersetTestCase):
         database_data = {
             "database_name": "test-create-database-wrong-password",
             "sqlalchemy_uri": example_db.sqlalchemy_uri_decrypted,
+            "configuration_method": ConfigurationMethod.SQLALCHEMY_URI,
         }
 
         uri = "api/v1/database/"
@@ -433,7 +464,10 @@ class TestDatabaseApi(SupersetTestCase):
             "test-database", example_db.sqlalchemy_uri_decrypted
         )
         self.login(username="admin")
-        database_data = {"database_name": "test-database-updated"}
+        database_data = {
+            "database_name": "test-database-updated",
+            "configuration_method": ConfigurationMethod.DYNAMIC_FORM,
+        }
         uri = f"api/v1/database/{test_database.id}"
         rv = self.client.put(uri, json=database_data)
         self.assertEqual(rv.status_code, 200)
@@ -533,6 +567,23 @@ class TestDatabaseApi(SupersetTestCase):
 
         db.session.delete(test_database)
         db.session.commit()
+
+    def test_update_database_with_invalid_configuration_method(self):
+        """
+        Database API: Test update
+        """
+        example_db = get_example_database()
+        test_database = self.insert_database(
+            "test-database", example_db.sqlalchemy_uri_decrypted
+        )
+        self.login(username="admin")
+        database_data = {
+            "database_name": "test-database-updated",
+            "configuration_method": "BAD_FORM",
+        }
+        uri = f"api/v1/database/{test_database.id}"
+        rv = self.client.put(uri, json=database_data)
+        self.assertEqual(rv.status_code, 400)
 
     def test_delete_database(self):
         """
@@ -730,8 +781,8 @@ class TestDatabaseApi(SupersetTestCase):
         """
         Database API: Test database schemas
         """
-        self.login("admin")
-        database = db.session.query(Database).first()
+        self.login(username="admin")
+        database = db.session.query(Database).filter_by(database_name="examples").one()
         schemas = database.get_all_schema_names()
 
         rv = self.client.get(f"api/v1/database/{database.id}/schemas/")
@@ -855,16 +906,17 @@ class TestDatabaseApi(SupersetTestCase):
         expected_response = {
             "errors": [
                 {
-                    "message": "Could not load database driver: MssqlEngineSpec",
-                    "error_type": "GENERIC_COMMAND_ERROR",
-                    "level": "warning",
+                    "message": 'The host "url" might be down, and can\'t be reached on port None.',
+                    "error_type": "CONNECTION_HOST_DOWN_ERROR",
+                    "level": "error",
                     "extra": {
+                        "engine_name": "Microsoft SQL",
                         "issue_codes": [
                             {
-                                "code": 1010,
-                                "message": "Issue 1010 - Superset encountered an error while running a command.",
+                                "code": 1009,
+                                "message": "Issue 1009 - The host might be down, and can't be reached on the provided port.",
                             }
-                        ]
+                        ],
                     },
                 }
             ]
